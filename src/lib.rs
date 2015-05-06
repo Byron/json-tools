@@ -1,6 +1,5 @@
 /// A lexer for utf-8 encoded json data
-pub struct Lexer<I> 
-                where I: Iterator<Item=char> {
+pub struct Lexer<I: Iterator<Item=char>> {
     chars: I,
     prev_end: u64,
 }
@@ -220,3 +219,24 @@ impl<I> Iterator for Lexer<I>
         }
     }
 }
+
+pub struct FilterNull<I: Iterator<Item=Token>> {
+    src: I,
+}
+
+impl<I: Iterator<Item=Token>> FilterNull<I> {
+    pub fn new(src: I) -> FilterNull<I> {
+        FilterNull {
+            src: src
+        }
+    }
+}
+
+impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Token> {
+        None
+    }
+}
+

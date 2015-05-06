@@ -1,0 +1,21 @@
+language: rust
+# NOTE: only required for coveralls, see TODO
+# sudo: required
+
+rust:
+  - nightly
+  - beta
+before_script:
+  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+script:
+  - |
+      travis-cargo build &&
+      travis-cargo test &&
+      travis-cargo doc
+# TODO: setup coveralls and secret
+# after_success:
+  # - travis-cargo doc-upload
+  # - travis-cargo coveralls
+
+env:
+  global:

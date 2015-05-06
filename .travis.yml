@@ -1,14 +1,14 @@
 language: rust
 rust:
-  - beta
+- beta
 before_script:
-  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
-  - travis-cargo build
-  - travis-cargo test
-  - travis-cargo doc
+- travis-cargo build
+- travis-cargo test
+- travis-cargo doc
 after_success:
-  - travis-cargo doc-upload
+- travis-cargo doc-upload
 env:
   global:
-    secure: dNq4lrONr1BVbThL7Gg46bTLcP0caEyirs7ygKxclU1doJ9gSRTK1c2E8hU3SvhQ2eJO4dYyUigQo1b5CO82hpfWJxR7rMk4Nmy06l9kvz2O8++yHIJhObwTPeCKuWFbWyHLFKAc4o6xyTESumsHpHEApllDjkuEoxaMioJ3wY0=
+    secure: V4Xyd4DQi24gRnM+J26K8VF/8/Ah8OkTt0niyX0l2Auu9rdAkytWgIILwiD3uucknLIR3SOTZE6nPQizaXGpNnWo9zl+HZlXtx8DjPd37/UH9ejH/kirH4GJl1aryxgti2qs4KkX0ooomMDDibtZ8dy405pgfgySoo/jFKPhTdg=

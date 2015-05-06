@@ -95,7 +95,27 @@ impl<I> Iterator for Lexer<I>
                 first = prev_end + lcid - 1;
             };
 
-            if nbi > 0 {
+            // STRING FAST PATH
+            if in_str {
+                if ign_next && (c == '"' || c == '\\') {
+                    ign_next = false;
+                    continue;
+                }
+                match c {
+                    '"' => {
+                        t = TokenType::StringValue;
+                        break;
+                    },
+                    '\\' => {
+                        ign_next = true;
+                        continue;    
+                    },
+                    _ => {
+                        continue;
+                    }
+                }
+            // NULL FAST PATH
+            } else if nbi > 0 {
                 nb[nbi] = c;
                 if nbi == 3 {
                     // we know nb[0] is 'n'
@@ -105,79 +125,44 @@ impl<I> Iterator for Lexer<I>
                     break;
                 } else {
                     nbi += 1;
+                    continue;
                 }
             }
 
             match c {
                 '\\' => {
-                    if in_str {
-                        ign_next = true;
-                        continue; // this is allowed only here !
-                    } else {
-                        // invalid
-                        debug_assert!(t == TokenType::Invalid);
-                        set_cursor();
-                        break
-                    }
+                    // invalid
+                    debug_assert_eq!(t, TokenType::Invalid);
+                    set_cursor();
+                    break
                 }
-                '{'
-                |'}'
-                |'['
-                |']'
-                |':'
-                |',' => {
-                    if !in_str {
-                        set_cursor();
-                        t = match c {
-                            '{' => TokenType::CurlyOpen,
-                            '}' => TokenType::CurlyClose,
-                            '[' => TokenType::BracketOpen,
-                            ']' => TokenType::BracketClose,
-                            ':' => TokenType::Colon,
-                            ',' => TokenType::Comma,
-                            _ => unreachable!(),
-                        };
-                        break;
-                    }
-                },
+                '{' => { t = TokenType::CurlyOpen; set_cursor(); break; },
+                '}' => { t = TokenType::CurlyClose; set_cursor(); break; },
+                '[' => { t = TokenType::BracketOpen; set_cursor(); break; },
+                ']' => { t = TokenType::BracketClose; set_cursor(); break; },
+                ':' => { t = TokenType::Colon; set_cursor(); break; },
+                ',' => { t = TokenType::Comma; set_cursor(); break; },
                 'n' => {
-                    if !in_str {
-                        debug_assert!(nbi == 0);
-                        nb[0] = c;
-                        nbi = 1;
-                        set_cursor();
-                    }
+                    debug_assert_eq!(nbi, 0);
+                    nb[0] = c;
+                    nbi = 1;
+                    set_cursor();
                 }
                 '"' => {
-                    if !ign_next {
-                        if in_str {
-                            in_str = false;
-                            break;
-                        } else {
-                            in_str = true;
-                            t = TokenType::StringValue;
-                            set_cursor();
-                        }
-                    }
+                    debug_assert!(!in_str);
+                    in_str = true;
+                    set_cursor();
                 },
                 _ => {
                     // Everything here is considered whitespace, which is skipped
                 },
             }// end single character match
-
-            // NOTE: MUST NOT CONTINUE !
-            ign_next = false;
         }// end for each character
 
 
         if lcid == 0 {
             None
         } else {
-            // unclosed string literal ?
-            if in_str {
-                t = TokenType::Invalid;
-            }
-
             self.prev_end = self.prev_end + lcid;
             Some(Token {
                 kind: t,

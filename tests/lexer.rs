@@ -62,6 +62,23 @@ fn unclosed_string_value() {
                                                                      end:  8 } }));
 }
 
+#[test]
+fn backslash_escapes_backslash_in_string_value() {
+    let src = r#"{"s":"f\\"}"#;
+    let mut it = Lexer::new(src.chars());
+
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::StringValue, 
+                                                        span: Span { first: 5,
+                                                                     end:  10 } }));
+
+    let src = r#"{"s":"f\"}"#;
+    let mut it = Lexer::new(src.chars());
+
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
+                                                        span: Span { first: 5,
+                                                                     end:  10 } }));
+}
+
 
 #[test]
 fn null_value() {

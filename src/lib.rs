@@ -29,8 +29,13 @@ pub enum TokenType {
     BooleanTrue,
     /// `false`
     BooleanFalse,
+
     /// any json number, like `1.24123` or `123`
-    Number,
+    // NOTE: We can't do numbers with our simplified lexer as it would require
+    // us to read a char just to see that it's not a number and thus the previous
+    // tokens are to be returned. But we cannot peek without drastically complicating
+    // our so far quite speedy implementation.
+    // Number,
     /// `null`
     Null,
     

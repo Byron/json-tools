@@ -127,6 +127,7 @@ impl<I> Iterator for Lexer<I>
                 '"' => {
                     if !ign_next {
                         if in_str {
+                            in_str = false;
                             break;
                         } else {
                             in_str = true;
@@ -144,9 +145,15 @@ impl<I> Iterator for Lexer<I>
             ign_next = false;
         }// end for each character
 
+
         if lcid == 0 {
             None
         } else {
+            // unclosed string literal ?
+            if in_str {
+                t = TokenType::Invalid;
+            }
+            
             self.prev_end = self.prev_end + lcid;
             Some(Token {
                 kind: t,

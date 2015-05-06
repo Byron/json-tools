@@ -3,7 +3,7 @@ extern crate json_tools;
 use json_tools::{Lexer, Token, Span, TokenType};
 
 #[test]
-fn unicode() {
+fn string_value() {
     let src = r#"{ "face": "😂" }"#;
     let mut it = Lexer::new(src.chars());
 
@@ -27,7 +27,39 @@ fn unicode() {
 
 #[test]
 fn string_escaping() {
-    // Add code here
+    let src = r#"{"s":"\"in\""}"#;
+    let it = Lexer::new(src.chars());
+    assert_eq!(it.skip(3).next(), Some(Token { kind: TokenType::StringValue, 
+                                               span: Span { first: 5,
+                                                            end:  13 } }));
+
+    // '\"' makes us ignore the beginning of the string, and we never hit the end
+    let src = r#"{"s":\"foo"}"#;
+    let mut it = Lexer::new(src.chars());
+    // this is the '\' character - only valid within a string
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
+                                               span: Span { first: 5,
+                                                            end:  6 } }));
+    // now comes the string
+    assert_eq!(it.next(), Some(Token { kind: TokenType::StringValue, 
+                                               span: Span { first: 6,
+                                               end:  11 } }));
+    
+    assert!(it.next().is_some());
+    // last one hit the end already˚
+    assert!(it.next().is_none());
+}
+
+#[test]
+fn unclosed_string_value() {
+    // '\"' makes us ignore the beginning of the string, and we never hit the end
+    let src = r#"{"s":"f}"#;
+    let mut it = Lexer::new(src.chars());
+
+    // unclosed strings are invalid
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
+                                                        span: Span { first: 5,
+                                                                     end:  8 } }));
 }
 
 

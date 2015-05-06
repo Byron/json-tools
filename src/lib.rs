@@ -85,12 +85,28 @@ impl<I> Iterator for Lexer<I>
         let mut first = 0;
         let prev_end = self.prev_end;
 
+        let mut nb = ['x', 'x', 'x', 'x']; // null buffer
+        let mut nbi = 0usize;                 // null buffer index
+
         for c in self.chars.by_ref() {
             lcid += 1;
 
             let mut set_cursor = || {
                 first = prev_end + lcid - 1;
             };
+
+            if nbi > 0 {
+                nb[nbi] = c;
+                if nbi == 3 {
+                    // we know nb[0] is 'n'
+                    if nb[1] == 'u' && nb[2] == 'l' && nb[3] == 'l' {
+                        t = TokenType::NullValue;
+                    }
+                    break;
+                } else {
+                    nbi += 1;
+                }
+            }
 
             match c {
                 '\\' => {
@@ -99,7 +115,7 @@ impl<I> Iterator for Lexer<I>
                         continue; // this is allowed only here !
                     } else {
                         // invalid
-                        assert_eq!(t, TokenType::Invalid);
+                        debug_assert!(t == TokenType::Invalid);
                         set_cursor();
                         break
                     }
@@ -124,6 +140,14 @@ impl<I> Iterator for Lexer<I>
                         break;
                     }
                 },
+                'n' => {
+                    if !in_str {
+                        debug_assert!(nbi == 0);
+                        nb[0] = c;
+                        nbi = 1;
+                        set_cursor();
+                    }
+                }
                 '"' => {
                     if !ign_next {
                         if in_str {
@@ -153,7 +177,7 @@ impl<I> Iterator for Lexer<I>
             if in_str {
                 t = TokenType::Invalid;
             }
-            
+
             self.prev_end = self.prev_end + lcid;
             Some(Token {
                 kind: t,

@@ -64,6 +64,27 @@ fn unclosed_string_value() {
 
 
 #[test]
+fn null_value() {
+    let src = r#"{"n":null}"#;
+    let mut it = Lexer::new(src.chars());
+
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::NullValue, 
+                                                        span: Span { first: 5,
+                                                                     end:  9 } }));
+}
+
+#[test]
+fn unclosed_null_value() {
+    let src = r#"{"n":nuxl}"#;
+    let mut it = Lexer::new(src.chars());
+
+    // invalid null characters cause it to be invalid
+    assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
+                                                        span: Span { first: 5,
+                                                                     end:  9 } }));
+}
+
+#[test]
 fn multi_line_strings() {
     // Add code here
 }

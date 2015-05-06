@@ -5,7 +5,7 @@ pub struct Lexer<I>
     prev_end: u64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     /// `{`
     CurlyOpen,
@@ -24,7 +24,7 @@ pub enum TokenType {
 
 
     /// A json string , like `"foo"`
-    StringValue,
+    String,
     /// `true`
     BooleanTrue,
     /// `false`
@@ -32,7 +32,7 @@ pub enum TokenType {
     /// any json number, like `1.24123` or `123`
     Number,
     /// `null`
-    NullValue,
+    Null,
     
     /// The type of the token could not be identified.
     /// Should be removed if this lexer is ever to be feature complete
@@ -42,7 +42,7 @@ pub enum TokenType {
 /// A pair of indices into the character stream returned by our source 
 /// iterator.
 /// It is an exclusive range.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Span {
     /// Index of the first the unicode character
     pub first: u64,
@@ -51,7 +51,7 @@ pub struct Span {
 }
 
 /// A lexical token, identifying its kind and span.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     /// The exact type of the token
     pub kind: TokenType,
@@ -85,8 +85,11 @@ impl<I> Iterator for Lexer<I>
         let mut first = 0;
         let prev_end = self.prev_end;
 
-        let mut nb = ['x', 'x', 'x', 'x']; // null buffer
-        let mut nbi = 0usize;                 // null buffer index
+        let mut b4 = ['x', 'x', 'x', 'x'];         // buffer (4 characters)
+        let mut b5 = ['x', 'x', 'x', 'x', 'x'];    // buffer (5 characters)
+        let mut nbi = 0usize;                      // null buffer index
+        let mut tbi = 0usize;                      // true buffer index
+        let mut fbi = 0usize;                      // false buffer index
 
         for c in self.chars.by_ref() {
             lcid += 1;
@@ -103,7 +106,7 @@ impl<I> Iterator for Lexer<I>
                 }
                 match c {
                     '"' => {
-                        t = TokenType::StringValue;
+                        t = TokenType::String;
                         break;
                     },
                     '\\' => {
@@ -116,43 +119,81 @@ impl<I> Iterator for Lexer<I>
                 }
             // NULL FAST PATH
             } else if nbi > 0 {
-                nb[nbi] = c;
+                b4[nbi] = c;
                 if nbi == 3 {
-                    // we know nb[0] is 'n'
-                    if nb[1] == 'u' && nb[2] == 'l' && nb[3] == 'l' {
-                        t = TokenType::NullValue;
+                    // we know b4[0] is 'n'
+                    if b4[1] == 'u' && b4[2] == 'l' && b4[3] == 'l' {
+                        t = TokenType::Null;
                     }
                     break;
                 } else {
                     nbi += 1;
                     continue;
                 }
+            // TRUE FAST PATH
+            } else if tbi > 0 {
+                b4[tbi] = c;
+                if tbi == 3 {
+                    // we know b4[0] is 't'
+                    if b4[1] == 'r' && b4[2] == 'u' && b4[3] == 'e' {
+                        t = TokenType::BooleanTrue;
+                    }
+                    break;
+                } else {
+                    tbi += 1;
+                    continue;
+                }
+            // FALSE FAST PATH
+            } else if fbi > 0 {
+                b5[fbi] = c;
+                if fbi == 4 {
+                    // we know b5[0] is 'f'
+                    if b5[1] == 'a' && b5[2] == 'l' && b5[3] == 's' && b5[4] == 'e' {
+                        t = TokenType::BooleanFalse;
+                    }
+                    break;
+                } else {
+                    fbi += 1;
+                    continue;
+                }
             }
 
             match c {
+                '{' => { t = TokenType::CurlyOpen; set_cursor(); break; },
+                '}' => { t = TokenType::CurlyClose; set_cursor(); break; },
+                '"' => {
+                    debug_assert!(!in_str);
+                    in_str = true;
+                    set_cursor();
+                },
+                'n' => {
+                    debug_assert_eq!(nbi, 0);
+                    b4[0] = c;
+                    nbi = 1;
+                    set_cursor();
+                },
+                't' => {
+                    debug_assert_eq!(tbi, 0);
+                    b4[0] = c;
+                    tbi = 1;
+                    set_cursor();
+                },
+                'f' => {
+                    debug_assert_eq!(fbi, 0);
+                    b5[0] = c;
+                    fbi = 1;
+                    set_cursor();
+                },
+                '[' => { t = TokenType::BracketOpen; set_cursor(); break; },
+                ']' => { t = TokenType::BracketClose; set_cursor(); break; },
+                ':' => { t = TokenType::Colon; set_cursor(); break; },
+                ',' => { t = TokenType::Comma; set_cursor(); break; },
                 '\\' => {
                     // invalid
                     debug_assert_eq!(t, TokenType::Invalid);
                     set_cursor();
                     break
                 }
-                '{' => { t = TokenType::CurlyOpen; set_cursor(); break; },
-                '}' => { t = TokenType::CurlyClose; set_cursor(); break; },
-                '[' => { t = TokenType::BracketOpen; set_cursor(); break; },
-                ']' => { t = TokenType::BracketClose; set_cursor(); break; },
-                ':' => { t = TokenType::Colon; set_cursor(); break; },
-                ',' => { t = TokenType::Comma; set_cursor(); break; },
-                'n' => {
-                    debug_assert_eq!(nbi, 0);
-                    nb[0] = c;
-                    nbi = 1;
-                    set_cursor();
-                }
-                '"' => {
-                    debug_assert!(!in_str);
-                    in_str = true;
-                    set_cursor();
-                },
                 _ => {
                     // Everything here is considered whitespace, which is skipped
                 },

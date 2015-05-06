@@ -1,6 +1,6 @@
 [package]
 name = "json-tools"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Sebastian Thiel <byronimo@gmail.com>"]
 license = "MIT"
 description = "A collections of tools to handle json encoded data"

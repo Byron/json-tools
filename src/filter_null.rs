@@ -23,6 +23,16 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
             return self.buf.pop_front()
         }
 
+        fn last_token(v: &mut VecDeque<Token>, t: Token) -> Option<Token> {
+            // assume it's a comma
+            if v.len() > 0 {
+                v.push_back(t);
+                v.pop_front()
+            } else {
+                Some(t)
+            }
+        }
+
         let token = self.src.next();
         match token {
             Some(mut first_str_candidate) => {
@@ -42,12 +52,17 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
                                                             // WE HAVE A STR : STR triplete, and we forget it
                                                             // This works by just not putting it onto the ringbuffer
                                                             // See if there is a (optional) comma
+                                                            // If self.buf has anything, it must be commas !
+                                                            // Usually, it is only 0 or 1 !
                                                             match self.src.next() {
                                                                 Some(comma_candidate) => {
                                                                     first_str_candidate = 
                                                                         match match comma_candidate.kind {
                                                                             TokenType::Comma => self.src.next(),
-                                                                            _ => Some(comma_candidate)
+                                                                            _ => {
+                                                                                self.buf.pop_front();
+                                                                                Some(comma_candidate)
+                                                                            }
                                                                         } {
                                                                             Some(t) => t,
                                                                             None => return None,
@@ -58,30 +73,47 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
                                                             }
                                                         },
                                                         _ => {
+                                                            let res = last_token(&mut self.buf, first_str_token);
                                                             self.buf.push_back(colon);
                                                             self.buf.push_back(second_str_candidate);
-                                                            return Some(first_str_token)
+                                                            return res
                                                         }
                                                     }
                                                 },
                                                 None => {
+                                                    let res = last_token(&mut self.buf, first_str_token);
                                                     self.buf.push_back(colon);
-                                                    return Some(first_str_token)
+                                                    return res
                                                 }
                                             }
                                         },
                                         _ => {
+                                            let res = last_token(&mut self.buf, first_str_token);
                                             self.buf.push_back(colon_candidate);
-                                            return Some(first_str_token)
+                                            return res
                                         }
                                     }// end is colon token
                                 },// end have token (colon?)
-                                None => return Some(first_str_token),
+                                None => return last_token(&mut self.buf, first_str_token),
                             }// end match next token (colon?)
                          }// end is string token,
-                         _ => return Some(first_str_candidate),
+                         TokenType::Comma => {
+                            match self.src.next() {
+                                None => return Some(first_str_candidate),
+                                Some(t) => {
+                                    // keep it, it will be returned first in case we 
+                                    // end up not having a match
+                                    // NOTE: will keep pushing back malformed ,,,,, sequences
+                                    // which could be used for DOS attacks. TODO: impl. put_back
+                                    self.buf.push_back(first_str_candidate);
+                                    first_str_candidate = t;
+                                    continue
+                                }
+                            }
+                         },
+                         _ => return last_token(&mut self.buf, first_str_candidate),
                      }// end match token kind (string?)
-                }// end inner str candidate loop
+                }// end inner str candidate LOOP
             },// end have token
             None => None,
         }

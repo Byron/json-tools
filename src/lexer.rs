@@ -170,16 +170,7 @@ impl<I> Iterator for Lexer<I>
                 },
                 Mode::Number => {
                     match c {
-                         '0'
-                        |'1'
-                        |'2'
-                        |'3'
-                        |'4'
-                        |'5'
-                        |'6'
-                        |'7'
-                        |'8'
-                        |'9'
+                         '0' ... '9'
                         |'-'
                         |'.' => {
                             continue;
@@ -229,16 +220,7 @@ impl<I> Iterator for Lexer<I>
                             state = Mode::Null([c, 'x', 'x', 'x'], 1);
                             set_cursor(self.cursor);
                         },
-                         '0'
-                        |'1'
-                        |'2'
-                        |'3'
-                        |'4'
-                        |'5'
-                        |'6'
-                        |'7'
-                        |'8'
-                        |'9'
+                         '0' ... '9'
                         |'-'
                         |'.'=> {
                             state = Mode::Number;

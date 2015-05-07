@@ -5,7 +5,7 @@ use json_tools::{Lexer, Token, Span, TokenType};
 #[test]
 fn string_value() {
     let src = r#"{ "face": "😂" }"#;
-    let mut it = Lexer::new(src.chars());
+    let mut it = Lexer::new(src.bytes());
 
     assert_eq!(it.next(), Some(Token { kind: TokenType::CurlyOpen, 
                                        span: Span { first: 0,
@@ -18,24 +18,24 @@ fn string_value() {
                                                     end:  9 } }));
     assert_eq!(it.next(), Some(Token { kind: TokenType::String, 
                                        span: Span { first: 10,
-                                                    end:  13 } }));
+                                                    end:  16 } }));
     assert_eq!(it.next(), Some(Token { kind: TokenType::CurlyClose, 
-                                       span: Span { first: 14,
-                                                    end:  15 } }));
+                                       span: Span { first: 17,
+                                                    end:  18 } }));
 }
 
 
 #[test]
 fn string_escaping() {
     let src = r#"{"s":"\"in\""}"#;
-    let it = Lexer::new(src.chars());
+    let it = Lexer::new(src.bytes());
     assert_eq!(it.skip(3).next(), Some(Token { kind: TokenType::String, 
                                                span: Span { first: 5,
                                                             end:  13 } }));
 
     // '\"' makes us ignore the beginning of the string, and we never hit the end
     let src = r#"{"s":\"foo"}"#;
-    let mut it = Lexer::new(src.chars());
+    let mut it = Lexer::new(src.bytes());
     // this is the '\' character - only valid within a string
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
                                                span: Span { first: 5,
@@ -54,7 +54,7 @@ fn string_escaping() {
 fn unclosed_string_value() {
     // '\"' makes us ignore the beginning of the string, and we never hit the end
     let src = r#"{"s":"f}"#;
-    let mut it = Lexer::new(src.chars());
+    let mut it = Lexer::new(src.bytes());
 
     // unclosed strings are invalid
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
@@ -65,14 +65,14 @@ fn unclosed_string_value() {
 #[test]
 fn backslash_escapes_backslash_in_string_value() {
     let src = r#"{"s":"f\\"}"#;
-    let mut it = Lexer::new(src.chars());
+    let mut it = Lexer::new(src.bytes());
 
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::String, 
                                                         span: Span { first: 5,
                                                                      end:  10 } }));
 
     let src = r#"{"s":"f\"}"#;
-    let mut it = Lexer::new(src.chars());
+    let mut it = Lexer::new(src.bytes());
 
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
                                                         span: Span { first: 5,
@@ -94,7 +94,7 @@ fn special_values_closed_and_unclosed() {
                                           (r#"{"v":-1.23}"#, TokenType::Number, 5, 10),
                                           (r#"{"v":1.}"#, TokenType::Number, 5, 7),
                                           (r#"{"v":.}"#, TokenType::Number, 5, 6),] {
-        assert_eq!(Lexer::new(src.chars()).skip(3).next(), 
+        assert_eq!(Lexer::new(src.bytes()).skip(3).next(), 
                                                     Some(Token { kind: kind.clone(), 
                                                                  span: Span { first: first,
                                                                               end: end } }));

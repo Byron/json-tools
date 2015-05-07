@@ -70,8 +70,8 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
                                                             // WE HAVE A STR : STR triplete, and we forget it
                                                             // This works by just not putting it onto the ringbuffer
                                                             // See if there is a (optional) comma
-                                                            // If self.buf has anything, it must be commas !
-                                                            // Usually, it is only 0 or 1 !
+                                                            // If self.buf has anything, it must be a comma !
+                                                            // It is only 0 or 1 !
                                                             match self.next_token() {
                                                                 Some(comma_candidate) => {
                                                                     first_str_candidate = 

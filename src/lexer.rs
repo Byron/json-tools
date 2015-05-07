@@ -1,7 +1,7 @@
 /// A lexer for utf-8 encoded json data
-pub struct Lexer<I: Iterator<Item=char>> {
+pub struct Lexer<I: Iterator<Item=u8>> {
     chars: I,
-    next_char: Option<char>,
+    next_byte: Option<u8>,
     cursor: u64,
 }
 
@@ -34,7 +34,7 @@ pub enum TokenType {
 
     /// any json number, like `1.24123` or `123`
     // NOTE: We can't do numbers with our simplified lexer as it would require
-    // us to read a char just to see that it's not a number and thus the previous
+    // us to read a byte just to see that it's not a number and thus the previous
     // tokens are to be returned. But we cannot peek without drastically complicating
     // our so far quite speedy implementation.
     // Number,
@@ -67,24 +67,24 @@ pub struct Token {
     pub span: Span,
 }
 
-impl<I> Lexer<I> where I: Iterator<Item=char> {
+impl<I> Lexer<I> where I: Iterator<Item=u8> {
     /// Returns a new Lexer from a given character iterator.
     pub fn new(chars: I) -> Lexer<I> {
         Lexer {
             chars: chars,
-            next_char: None,
+            next_byte: None,
             cursor: 0,
         }
     }
 
-    fn put_back(&mut self, c: char) {
-        debug_assert!(self.next_char.is_none());
-        self.next_char = Some(c);
+    fn put_back(&mut self, c: u8) {
+        debug_assert!(self.next_byte.is_none());
+        self.next_byte = Some(c);
         self.cursor -= 1;
     }
 
-    fn next_char(&mut self) -> Option<char> {
-        match self.next_char.take() {
+    fn next_byte(&mut self) -> Option<u8> {
+        match self.next_byte.take() {
             Some(c) => {
                 self.cursor += 1;
                 Some(c)
@@ -108,18 +108,18 @@ enum Mode {
     // String parse mode: bool = ignore_next
     String(bool),
     // `null` parse mode: buf, buf-index
-    Null([char; 4], usize),
+    Null([u8; 4], usize),
     // `true` parse mode
-    True([char; 4], usize),
+    True([u8; 4], usize),
     // `false` parse mode
-    False([char; 5], usize),
+    False([u8; 5], usize),
     // `Number` parse mode
     Number,
     SlowPath,
 }
 
 impl<I> Iterator for Lexer<I> 
-                    where I: Iterator<Item=char> {
+                    where I: Iterator<Item=u8> {
     type Item = Token;
 
     /// Lex the underlying character stream to generate tokens
@@ -130,23 +130,23 @@ impl<I> Iterator for Lexer<I>
         let mut state = Mode::SlowPath;
         let last_cursor = self.cursor;
 
-        while let Some(c) = self.next_char() {
+        while let Some(c) = self.next_byte() {
             let mut set_cursor = |cursor| {
                 first = cursor - 1;
             };
 
             match state {
                 Mode::String(ref mut ign_next) => {
-                    if *ign_next && (c == '"' || c == '\\') {
+                    if *ign_next && (c == b'"' || c == b'\\') {
                         *ign_next = false;
                         continue;
                     }
                     match c {
-                        '"' => {
+                        b'"' => {
                             t = TokenType::String;
                             break;
                         },
-                        '\\' => {
+                        b'\\' => {
                             *ign_next = true;
                             continue;    
                         },
@@ -158,8 +158,8 @@ impl<I> Iterator for Lexer<I>
                 Mode::Null(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 3 {
-                        // we know b[0] is 'n'
-                        if b[1] == 'u' && b[2] == 'l' && b[3] == 'l' {
+                        // we know b[0] is b'n'
+                        if b[1] == b'u' && b[2] == b'l' && b[3] == b'l' {
                             t = TokenType::Null;
                         }
                         break;
@@ -170,9 +170,9 @@ impl<I> Iterator for Lexer<I>
                 },
                 Mode::Number => {
                     match c {
-                         '0' ... '9'
-                        |'-'
-                        |'.' => {
+                         b'0' ... b'9'
+                        |b'-'
+                        |b'.' => {
                             continue;
                         },
                         _ => {
@@ -185,8 +185,8 @@ impl<I> Iterator for Lexer<I>
                 Mode::True(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 3 {
-                        // we know b[0] is 't'
-                        if b[1] == 'r' && b[2] == 'u' && b[3] == 'e' {
+                        // we know b[0] is b't'
+                        if b[1] == b'r' && b[2] == b'u' && b[3] == b'e' {
                             t = TokenType::BooleanTrue;
                         }
                         break;
@@ -198,8 +198,8 @@ impl<I> Iterator for Lexer<I>
                 Mode::False(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 4 {
-                        // we know b[0] is 'f'
-                        if b[1] == 'a' && b[2] == 'l' && b[3] == 's' && b[4] == 'e' {
+                        // we know b[0] is b'f'
+                        if b[1] == b'a' && b[2] == b'l' && b[3] == b's' && b[4] == b'e' {
                             t = TokenType::BooleanFalse;
                         }
                         break;
@@ -210,35 +210,35 @@ impl<I> Iterator for Lexer<I>
                 },
                 Mode::SlowPath => {
                     match c {
-                        '{' => { t = TokenType::CurlyOpen; set_cursor(self.cursor); break; },
-                        '}' => { t = TokenType::CurlyClose; set_cursor(self.cursor); break; },
-                        '"' => {
+                        b'{' => { t = TokenType::CurlyOpen; set_cursor(self.cursor); break; },
+                        b'}' => { t = TokenType::CurlyClose; set_cursor(self.cursor); break; },
+                        b'"' => {
                             state = Mode::String(false);
                             set_cursor(self.cursor);
                         },
-                        'n' => {
-                            state = Mode::Null([c, 'x', 'x', 'x'], 1);
+                        b'n' => {
+                            state = Mode::Null([c, b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
                         },
-                         '0' ... '9'
-                        |'-'
-                        |'.'=> {
+                         b'0' ... b'9'
+                        |b'-'
+                        |b'.'=> {
                             state = Mode::Number;
                             set_cursor(self.cursor);
                         },
-                        't' => {
-                            state = Mode::True([c, 'x', 'x', 'x'], 1);
+                        b't' => {
+                            state = Mode::True([c, b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
                         },
-                        'f' => {
-                            state = Mode::False([c, 'x', 'x', 'x', 'x'], 1);
+                        b'f' => {
+                            state = Mode::False([c, b'x', b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
                         },
-                        '[' => { t = TokenType::BracketOpen; set_cursor(self.cursor); break; },
-                        ']' => { t = TokenType::BracketClose; set_cursor(self.cursor); break; },
-                        ':' => { t = TokenType::Colon; set_cursor(self.cursor); break; },
-                        ',' => { t = TokenType::Comma; set_cursor(self.cursor); break; },
-                        '\\' => {
+                        b'[' => { t = TokenType::BracketOpen; set_cursor(self.cursor); break; },
+                        b']' => { t = TokenType::BracketClose; set_cursor(self.cursor); break; },
+                        b':' => { t = TokenType::Colon; set_cursor(self.cursor); break; },
+                        b',' => { t = TokenType::Comma; set_cursor(self.cursor); break; },
+                        b'\\' => {
                             // invalid
                             debug_assert_eq!(t, TokenType::Invalid);
                             set_cursor(self.cursor);

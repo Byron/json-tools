@@ -115,7 +115,7 @@ const NULL_RIDDEN: &'static str = r##"
 #[bench]
 fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
-        let it = Lexer::new(NULL_RIDDEN.chars());
+        let it = Lexer::new(NULL_RIDDEN.bytes());
         for t in it {
             test::black_box(t);
         }
@@ -128,7 +128,7 @@ fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
 #[bench]
 fn filter_null_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
-        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.chars()));
+        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.bytes()));
         for t in f {
             test::black_box(t);
         }

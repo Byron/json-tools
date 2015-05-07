@@ -47,6 +47,25 @@ pub enum TokenType {
     Invalid,
 }
 
+impl AsRef<str> for TokenType {
+    fn as_ref(&self) -> &str {
+        match *self {
+            TokenType::CurlyOpen => "{",
+            TokenType::CurlyClose => "}",
+            TokenType::BracketOpen => "[",
+            TokenType::BracketClose => "]",
+            TokenType::Colon => ":",
+            TokenType::Comma => ",",
+            TokenType::BooleanTrue => "true",
+            TokenType::BooleanFalse => "false",
+            TokenType::Null => "null",
+
+            TokenType::Invalid => panic!("Cannot convert invalid TokenType"),
+            _ => panic!("Cannot convert variant TokenTypes"),
+        }
+    }
+}
+
 /// A pair of indices into the byte stream returned by our source 
 /// iterator.
 /// It is an exclusive range.

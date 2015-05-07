@@ -1,7 +1,6 @@
 extern crate json_tools;
 
-use std::io::Read;
-
+use std::io::{Read, self, Write};
 use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType, TokenReader};
 
 #[test]
@@ -39,6 +38,7 @@ fn filter_null_values() {
                     break
                 }
                 buf.push(byte[0]);
+                // writeln!(io::stderr(), "{:?}", buf).ok();
             }
             assert_eq!(&String::from_utf8(buf).unwrap(), want);
         }

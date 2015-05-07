@@ -1,3 +1,4 @@
+#![feature(core, collections)]
 mod lexer;
 mod key_value_filter;
 mod reader;

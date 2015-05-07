@@ -3,7 +3,7 @@
 extern crate json_tools;
 extern crate test;
 
-use json_tools::{Lexer, FilterNull, BufferType};
+use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType};
 
 const NULL_RIDDEN: &'static str = r##"
 {
@@ -138,7 +138,8 @@ fn bytes_lexer_throughput_in_bytes(b: &mut test::Bencher) {
 #[bench]
 fn span_filter_null_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
-        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span));
+        let f = FilterTypedKeyValuePairs::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span),
+                                              TokenType::Null);
         for t in f {
             test::black_box(t);
         }
@@ -173,7 +174,7 @@ fn span_lexer_throughput_in_bytes_with_cursor_and_tee(b: &mut test::Bencher) {
                                       .tee(&mut keeper)
                                       .bytes()
                                       .filter_map(|r|r.ok()),
-                              BufferType::Bytes(128));
+                              BufferType::Span);
           for t in it {
               test::black_box(t);
           }

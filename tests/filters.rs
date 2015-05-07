@@ -1,6 +1,6 @@
 extern crate json_tools;
 
-use json_tools::{Lexer, FilterNull, BufferType};
+use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType};
 
 #[test]
 fn filter_null_values() {
@@ -13,6 +13,7 @@ fn filter_null_values() {
                                    (r#"{"s":true, "s":null, "s":true }"#, 13, 9),
                                    (r#"{"s":true, "s":null "s":true }"#, 12, 8),] {
         assert_eq!(Lexer::new(src.bytes(), BufferType::Span).count(), count);
-        assert_eq!(FilterNull::new(Lexer::new(src.bytes(), BufferType::Span)).count(), fcount);    
+        assert_eq!(FilterTypedKeyValuePairs::new(Lexer::new(src.bytes(), BufferType::Span),
+                                                 TokenType::Null).count(), fcount);    
     }
 }

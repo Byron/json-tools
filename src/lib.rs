@@ -1,5 +1,5 @@
 mod lexer;
-mod filter_null;
+mod key_value_filter;
 
 pub use lexer::{Lexer, Token, TokenType, Span, BufferType, Buffer};
-pub use filter_null::{FilterNull};
+pub use key_value_filter::{FilterTypedKeyValuePairs};

@@ -85,6 +85,7 @@ pub enum Buffer {
 }
 
 /// The type of `Buffer` you want in each `Token`
+#[derive(Debug, PartialEq, Clone)]
 pub enum BufferType {
     /// Use a `Buffer::MultiByte` were appropriate. Initialize it with the 
     /// given capcity (to obtain higher performance when pushing charcters)
@@ -257,8 +258,9 @@ impl<I> Iterator for Lexer<I>
                             state = Mode::String(false);
                             if let Some(ref mut v) = buf {
                                 v.push(c);
+                            } else {
+                                set_cursor(self.cursor);
                             }
-                            set_cursor(self.cursor);
                         },
                         b'n' => {
                             state = Mode::Null([c, b'x', b'x', b'x'], 1);
@@ -267,11 +269,12 @@ impl<I> Iterator for Lexer<I>
                          b'0' ... b'9'
                         |b'-'
                         |b'.'=> {
+                            state = Mode::Number;
                             if let Some(ref mut v) = buf {
                                 v.push(c);
+                            } else {
+                                set_cursor(self.cursor);
                             }
-                            state = Mode::Number;
-                            set_cursor(self.cursor);
                         },
                         b't' => {
                             state = Mode::True([c, b'x', b'x', b'x'], 1);

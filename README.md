@@ -8,7 +8,7 @@ This library contains a collection of tools to help interacting with json encode
    - facilitates writing higher-level parsers and filters
 * **Null-Value Filter**
    - A utility to filter lexical tokens which belong to keys that have null values.
-     This makes easy to re-assemble json data streams and strip them off their null values.
+     This makes it easy to re-assemble json data streams and strip them off their null values.
 
 
 # Usage

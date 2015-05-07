@@ -86,7 +86,9 @@ pub enum Buffer {
 
 /// The type of `Buffer` you want in each `Token`
 pub enum BufferType {
-    Bytes,
+    /// Use a `Buffer::MultiByte` were appropriate. Initialize it with the 
+    /// given capcity (to obtain higher performance when pushing charcters)
+    Bytes(usize),
     Span,
 }
 
@@ -157,18 +159,22 @@ impl<I> Iterator for Lexer<I>
         let mut first = 0;
         let mut state = Mode::SlowPath;
         let last_cursor = self.cursor;
-        let mut buf: Vec<u8> = Vec::with_capacity(128);
+        let mut buf = 
+            match self.buffer_type {
+                BufferType::Bytes(capacity) => Some(Vec::<u8>::with_capacity(capacity)),
+                BufferType::Span => None,
+            };
 
         while let Some(c) = self.next_byte() {
-            if let BufferType::Bytes = self.buffer_type {
-                buf.push(c);
-            }
             let mut set_cursor = |cursor| {
                 first = cursor - 1;
             };
 
             match state {
                 Mode::String(ref mut ign_next) => {
+                    if let Some(ref mut v) = buf {
+                        v.push(c);
+                    }
                     if *ign_next && (c == b'"' || c == b'\\') {
                         *ign_next = false;
                         continue;
@@ -205,6 +211,9 @@ impl<I> Iterator for Lexer<I>
                          b'0' ... b'9'
                         |b'-'
                         |b'.' => {
+                            if let Some(ref mut v) = buf {
+                                v.push(c);
+                            }
                             continue;
                         },
                         _ => {
@@ -246,6 +255,9 @@ impl<I> Iterator for Lexer<I>
                         b'}' => { t = TokenType::CurlyClose; set_cursor(self.cursor); break; },
                         b'"' => {
                             state = Mode::String(false);
+                            if let Some(ref mut v) = buf {
+                                v.push(c);
+                            }
                             set_cursor(self.cursor);
                         },
                         b'n' => {
@@ -255,6 +267,9 @@ impl<I> Iterator for Lexer<I>
                          b'0' ... b'9'
                         |b'-'
                         |b'.'=> {
+                            if let Some(ref mut v) = buf {
+                                v.push(c);
+                            }
                             state = Mode::Number;
                             set_cursor(self.cursor);
                         },
@@ -277,10 +292,7 @@ impl<I> Iterator for Lexer<I>
                             break
                         }
                         _ => {
-                            // Everything here is considered whitespace, which is skipped
-                            if let BufferType::Bytes = self.buffer_type {
-                                buf.pop();
-                            }
+
                         },
                     }// end single byte match
                 }// end case SlowPath
@@ -291,14 +303,15 @@ impl<I> Iterator for Lexer<I>
             None
         } else {
             let buf = 
-                match (&t, &self.buffer_type) {
-                      (&TokenType::String, &BufferType::Bytes)
-                     |(&TokenType::Number, &BufferType::Bytes) => Buffer::MultiByte(buf),
-                    _ => 
+                match (&t, buf) {
+                      (&TokenType::String, Some(b))
+                     |(&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
+                    _ => {
                         Buffer::Span(Span {
                                     first: first,
                                     end: self.cursor
-                                }),
+                                })
+                    }
                 };
             Some(Token {
                 kind: t,

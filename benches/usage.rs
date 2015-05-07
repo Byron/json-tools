@@ -113,7 +113,7 @@ const NULL_RIDDEN: &'static str = r##"
 "##;
 
 #[bench]
-fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
+fn span_lexer_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span);
         for t in it {
@@ -123,10 +123,20 @@ fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
     b.bytes = NULL_RIDDEN.len() as u64;
 }
 
+#[bench]
+fn bytes_lexer_throughput_in_bytes(b: &mut test::Bencher) {
+    b.iter(|| {
+        let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128));
+        for t in it {
+            test::black_box(t);
+        }
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
 
 
 #[bench]
-fn filter_null_throughput_in_bytes(b: &mut test::Bencher) {
+fn span_filter_null_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         let f = FilterNull::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span));
         for t in f {
@@ -138,7 +148,7 @@ fn filter_null_throughput_in_bytes(b: &mut test::Bencher) {
 
 
 #[bench]
-fn lexer_throughput_in_bytes_with_cursor(b: &mut test::Bencher) {
+fn span_lexer_throughput_in_bytes_with_cursor(b: &mut test::Bencher) {
     use std::io::{Cursor, Read};
     
     b.iter(|| {
@@ -153,7 +163,7 @@ fn lexer_throughput_in_bytes_with_cursor(b: &mut test::Bencher) {
 
 
 #[bench]
-fn lexer_throughput_in_bytes_with_cursor_and_tee(b: &mut test::Bencher) {
+fn span_lexer_throughput_in_bytes_with_cursor_and_tee(b: &mut test::Bencher) {
     use std::io::{Cursor, Read};
     
     b.iter(|| {
@@ -163,7 +173,7 @@ fn lexer_throughput_in_bytes_with_cursor_and_tee(b: &mut test::Bencher) {
                                       .tee(&mut keeper)
                                       .bytes()
                                       .filter_map(|r|r.ok()),
-                              BufferType::Span);
+                              BufferType::Bytes(128));
           for t in it {
               test::black_box(t);
           }

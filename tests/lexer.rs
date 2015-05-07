@@ -87,7 +87,13 @@ fn special_values_closed_and_unclosed() {
                                           (r#"{"v":true}"#, TokenType::BooleanTrue, 5, 9),
                                           (r#"{"v":trux}"#, TokenType::Invalid, 5, 9),
                                           (r#"{"v":false}"#, TokenType::BooleanFalse, 5, 10),
-                                          (r#"{"v":falsze}"#, TokenType::Invalid, 5, 10),] {
+                                          (r#"{"v":falsze}"#, TokenType::Invalid, 5, 10),
+                                          (r#"{"v":123}"#, TokenType::Number, 5, 8),
+                                          (r#"{"v":-123}"#, TokenType::Number, 5, 9),
+                                          (r#"{"v":1.23}"#, TokenType::Number, 5, 9),
+                                          (r#"{"v":-1.23}"#, TokenType::Number, 5, 10),
+                                          (r#"{"v":1.}"#, TokenType::Number, 5, 7),
+                                          (r#"{"v":.}"#, TokenType::Number, 5, 6),] {
         assert_eq!(Lexer::new(src.chars()).skip(3).next(), 
                                                     Some(Token { kind: kind.clone(), 
                                                                  span: Span { first: first,

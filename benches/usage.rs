@@ -3,7 +3,8 @@
 extern crate json_tools;
 extern crate test;
 
-use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType};
+use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType, TokenReader};
+use std::io::{self, Read};
 
 const NULL_RIDDEN: &'static str = r##"
 {
@@ -119,6 +120,26 @@ fn span_lexer_throughput_in_bytes(b: &mut test::Bencher) {
         for t in it {
             test::black_box(t);
         }
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
+
+#[bench]
+fn span_lexer_span_token_reader_throughput_in_bytes(b: &mut test::Bencher) {
+    b.iter(|| {
+        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), 
+                                     Some(NULL_RIDDEN));
+        io::copy(&mut r, &mut io::sink()).ok();
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
+
+#[bench]
+fn span_lexer_bytes_token_reader_throughput_in_bytes(b: &mut test::Bencher) {
+    b.iter(|| {
+        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128)), 
+                                     None);
+        io::copy(&mut r, &mut io::sink()).ok();
     });
     b.bytes = NULL_RIDDEN.len() as u64;
 }

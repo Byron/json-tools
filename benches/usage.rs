@@ -3,7 +3,7 @@
 extern crate json_tools;
 extern crate test;
 
-use json_tools::{Lexer};
+use json_tools::{Lexer, FilterNull};
 
 const NULL_RIDDEN: &'static str = r##"
 {
@@ -113,10 +113,23 @@ const NULL_RIDDEN: &'static str = r##"
 "##;
 
 #[bench]
-fn name(b: &mut test::Bencher) {
+fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
         let it = Lexer::new(NULL_RIDDEN.chars());
         for t in it {
+            test::black_box(t);
+        }
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
+
+
+
+#[bench]
+fn filter_null_throughput_in_bytes(b: &mut test::Bencher) {
+    b.iter(|| {
+        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.chars()));
+        for t in f {
             test::black_box(t);
         }
     });

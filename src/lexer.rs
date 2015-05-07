@@ -170,7 +170,7 @@ impl<I> Iterator for Lexer<I>
                 },
                 Mode::Number => {
                     match c {
-                        '0'
+                         '0'
                         |'1'
                         |'2'
                         |'3'

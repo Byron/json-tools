@@ -10,7 +10,7 @@ impl<I: Iterator<Item=Token>> FilterNull<I> {
     pub fn new(src: I) -> FilterNull<I> {
         FilterNull {
             src: src,
-            buf: VecDeque::with_capacity(3),
+            buf: VecDeque::with_capacity(2),
         }
     }
 }
@@ -28,18 +28,16 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
             Some(first_str_candidate) => {
                 match first_str_candidate.kind {
                     TokenType::String => {
-                        // self.buf.push_back(token);
                         let first_str_token = first_str_candidate;
                         match self.src.next() {
                             Some(colon_candidate) => {
-                                // self.buf.push_back(token);
                                 match colon_candidate.kind {
                                     TokenType::Colon => {
+                                        let colon = colon_candidate;
                                         match self.src.next() {
                                             Some(second_str_candidate) => {
-                                                // self.buf.push_back(token);
                                                 match second_str_candidate.kind {
-                                                    TokenType::String => {
+                                                    TokenType::Null => {
                                                         // WE HAVE A STR : STR triplete, and we forget it
                                                         // This works by just not putting it onto the ringbuffer
                                                         // See if there is a (optional) comma
@@ -54,14 +52,14 @@ impl<I> Iterator for FilterNull<I> where I: Iterator<Item=Token>{
                                                         }
                                                     },
                                                     _ => {
-                                                        self.buf.push_back(colon_candidate);
+                                                        self.buf.push_back(colon);
                                                         self.buf.push_back(second_str_candidate);
                                                         Some(first_str_token)
                                                     }
                                                 }
                                             },
                                             None => {
-                                                self.buf.push_back(colon_candidate);
+                                                self.buf.push_back(colon);
                                                 Some(first_str_token)
                                             }
                                         }

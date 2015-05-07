@@ -74,6 +74,20 @@ impl<I> Lexer<I> where I: Iterator<Item=char> {
     }
 }
 
+// Identifies the state of the lexer
+enum Mode {
+    // String parse mode: bool = ignore_next
+    String(bool),
+    // `null` parse mode: buf, buf-index
+    Null([char; 4], usize),
+    // `true` parse mode
+    True([char; 4], usize),
+    // `false` parse mode
+    False([char; 5], usize),
+
+    SlowPath,
+}
+
 impl<I> Iterator for Lexer<I> 
                     where I: Iterator<Item=char> {
     type Item = Token;
@@ -83,17 +97,10 @@ impl<I> Iterator for Lexer<I>
         let mut t: TokenType = TokenType::Invalid;
         let mut lcid: u64 = 0;
 
-        let mut in_str = false;     // true if we are lexing a string
-        let mut ign_next = false;   // ignore next special character meaning
-
         let mut first = 0;
         let prev_end = self.prev_end;
 
-        let mut b4 = ['x', 'x', 'x', 'x'];         // buffer (4 characters)
-        let mut b5 = ['x', 'x', 'x', 'x', 'x'];    // buffer (5 characters)
-        let mut nbi = 0usize;                      // null buffer index
-        let mut tbi = 0usize;                      // true buffer index
-        let mut fbi = 0usize;                      // false buffer index
+        let mut state = Mode::SlowPath;
 
         for c in self.chars.by_ref() {
             lcid += 1;
@@ -102,106 +109,101 @@ impl<I> Iterator for Lexer<I>
                 first = prev_end + lcid - 1;
             };
 
-            // STRING FAST PATH
-            if in_str {
-                if ign_next && (c == '"' || c == '\\') {
-                    ign_next = false;
-                    continue;
-                }
-                match c {
-                    '"' => {
-                        t = TokenType::String;
-                        break;
-                    },
-                    '\\' => {
-                        ign_next = true;
-                        continue;    
-                    },
-                    _ => {
+            match state {
+                Mode::String(ref mut ign_next) => {
+                    if *ign_next && (c == '"' || c == '\\') {
+                        *ign_next = false;
                         continue;
                     }
-                }
-            // NULL FAST PATH
-            } else if nbi > 0 {
-                b4[nbi] = c;
-                if nbi == 3 {
-                    // we know b4[0] is 'n'
-                    if b4[1] == 'u' && b4[2] == 'l' && b4[3] == 'l' {
-                        t = TokenType::Null;
+                    match c {
+                        '"' => {
+                            t = TokenType::String;
+                            break;
+                        },
+                        '\\' => {
+                            *ign_next = true;
+                            continue;    
+                        },
+                        _ => {
+                            continue;
+                        }
                     }
-                    break;
-                } else {
-                    nbi += 1;
-                    continue;
-                }
-            // TRUE FAST PATH
-            } else if tbi > 0 {
-                b4[tbi] = c;
-                if tbi == 3 {
-                    // we know b4[0] is 't'
-                    if b4[1] == 'r' && b4[2] == 'u' && b4[3] == 'e' {
-                        t = TokenType::BooleanTrue;
+                },
+                Mode::Null(ref mut b, ref mut i) => {
+                    b[*i] = c;
+                    if *i == 3 {
+                        // we know b[0] is 'n'
+                        if b[1] == 'u' && b[2] == 'l' && b[3] == 'l' {
+                            t = TokenType::Null;
+                        }
+                        break;
+                    } else {
+                        *i += 1;
+                        continue;
                     }
-                    break;
-                } else {
-                    tbi += 1;
-                    continue;
-                }
-            // FALSE FAST PATH
-            } else if fbi > 0 {
-                b5[fbi] = c;
-                if fbi == 4 {
-                    // we know b5[0] is 'f'
-                    if b5[1] == 'a' && b5[2] == 'l' && b5[3] == 's' && b5[4] == 'e' {
-                        t = TokenType::BooleanFalse;
+                },
+                Mode::True(ref mut b, ref mut i) => {
+                    b[*i] = c;
+                    if *i == 3 {
+                        // we know b[0] is 't'
+                        if b[1] == 'r' && b[2] == 'u' && b[3] == 'e' {
+                            t = TokenType::BooleanTrue;
+                        }
+                        break;
+                    } else {
+                        *i += 1;
+                        continue;
                     }
-                    break;
-                } else {
-                    fbi += 1;
-                    continue;
-                }
-            }
-
-            match c {
-                '{' => { t = TokenType::CurlyOpen; set_cursor(); break; },
-                '}' => { t = TokenType::CurlyClose; set_cursor(); break; },
-                '"' => {
-                    debug_assert!(!in_str);
-                    in_str = true;
-                    set_cursor();
                 },
-                'n' => {
-                    debug_assert_eq!(nbi, 0);
-                    b4[0] = c;
-                    nbi = 1;
-                    set_cursor();
+                Mode::False(ref mut b, ref mut i) => {
+                    b[*i] = c;
+                    if *i == 4 {
+                        // we know b[0] is 'f'
+                        if b[1] == 'a' && b[2] == 'l' && b[3] == 's' && b[4] == 'e' {
+                            t = TokenType::BooleanFalse;
+                        }
+                        break;
+                    } else {
+                        *i += 1;
+                        continue;
+                    }
                 },
-                't' => {
-                    debug_assert_eq!(tbi, 0);
-                    b4[0] = c;
-                    tbi = 1;
-                    set_cursor();
-                },
-                'f' => {
-                    debug_assert_eq!(fbi, 0);
-                    b5[0] = c;
-                    fbi = 1;
-                    set_cursor();
-                },
-                '[' => { t = TokenType::BracketOpen; set_cursor(); break; },
-                ']' => { t = TokenType::BracketClose; set_cursor(); break; },
-                ':' => { t = TokenType::Colon; set_cursor(); break; },
-                ',' => { t = TokenType::Comma; set_cursor(); break; },
-                '\\' => {
-                    // invalid
-                    debug_assert_eq!(t, TokenType::Invalid);
-                    set_cursor();
-                    break
-                }
-                _ => {
-                    // Everything here is considered whitespace, which is skipped
-                },
-            }// end single character match
+                Mode::SlowPath => {
+                    match c {
+                        '{' => { t = TokenType::CurlyOpen; set_cursor(); break; },
+                        '}' => { t = TokenType::CurlyClose; set_cursor(); break; },
+                        '"' => {
+                            state = Mode::String(false);
+                            set_cursor();
+                        },
+                        'n' => {
+                            state = Mode::Null([c, 'x', 'x', 'x'], 1);
+                            set_cursor();
+                        },
+                        't' => {
+                            state = Mode::True([c, 'x', 'x', 'x'], 1);
+                            set_cursor();
+                        },
+                        'f' => {
+                            state = Mode::False([c, 'x', 'x', 'x', 'x'], 1);
+                            set_cursor();
+                        },
+                        '[' => { t = TokenType::BracketOpen; set_cursor(); break; },
+                        ']' => { t = TokenType::BracketClose; set_cursor(); break; },
+                        ':' => { t = TokenType::Colon; set_cursor(); break; },
+                        ',' => { t = TokenType::Comma; set_cursor(); break; },
+                        '\\' => {
+                            // invalid
+                            debug_assert_eq!(t, TokenType::Invalid);
+                            set_cursor();
+                            break
+                        }
+                        _ => {
+                            // Everything here is considered whitespace, which is skipped
+                        },
+                    }// end single character match
+                }// end case SlowPath
+            }// end match state
         }// end for each character
 
 

@@ -1,49 +1,49 @@
 extern crate json_tools;
 
-use json_tools::{Lexer, Token, Span, TokenType};
+use json_tools::{Lexer, Token, Span, TokenType, BufferType, Buffer};
 
 #[test]
 fn string_value() {
     let src = r#"{ "face": "😂" }"#;
-    let mut it = Lexer::new(src.bytes());
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
 
     assert_eq!(it.next(), Some(Token { kind: TokenType::CurlyOpen, 
-                                       span: Span { first: 0,
-                                                    end:  1 } }));
+                                       buf: Buffer::Span(Span { first: 0,
+                                                    end:  1 })}));
     assert_eq!(it.next(), Some(Token { kind: TokenType::String, 
-                                       span: Span { first: 2,
-                                                    end:  8 } }));
+                                       buf: Buffer::Span(Span { first: 2,
+                                                    end:  8 })}));
     assert_eq!(it.next(), Some(Token { kind: TokenType::Colon, 
-                                       span: Span { first: 8,
-                                                    end:  9 } }));
+                                       buf: Buffer::Span(Span { first: 8,
+                                                    end:  9 })}));
     assert_eq!(it.next(), Some(Token { kind: TokenType::String, 
-                                       span: Span { first: 10,
-                                                    end:  16 } }));
+                                       buf: Buffer::Span(Span { first: 10,
+                                                    end:  16 })}));
     assert_eq!(it.next(), Some(Token { kind: TokenType::CurlyClose, 
-                                       span: Span { first: 17,
-                                                    end:  18 } }));
+                                       buf: Buffer::Span(Span { first: 17,
+                                                    end:  18 })}));
 }
 
 
 #[test]
 fn string_escaping() {
     let src = r#"{"s":"\"in\""}"#;
-    let it = Lexer::new(src.bytes());
+    let it = Lexer::new(src.bytes(), BufferType::Span);
     assert_eq!(it.skip(3).next(), Some(Token { kind: TokenType::String, 
-                                               span: Span { first: 5,
-                                                            end:  13 } }));
+                                               buf: Buffer::Span(Span { first: 5,
+                                                            end:  13 })}));
 
     // '\"' makes us ignore the beginning of the string, and we never hit the end
     let src = r#"{"s":\"foo"}"#;
-    let mut it = Lexer::new(src.bytes());
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
     // this is the '\' character - only valid within a string
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
-                                               span: Span { first: 5,
-                                                            end:  6 } }));
+                                               buf: Buffer::Span(Span { first: 5,
+                                                            end:  6 })}));
     // now comes the string
     assert_eq!(it.next(), Some(Token { kind: TokenType::String, 
-                                               span: Span { first: 6,
-                                               end:  11 } }));
+                                               buf: Buffer::Span(Span { first: 6,
+                                               end:  11 })}));
     
     assert!(it.next().is_some());
     // last one hit the end already˚
@@ -54,29 +54,29 @@ fn string_escaping() {
 fn unclosed_string_value() {
     // '\"' makes us ignore the beginning of the string, and we never hit the end
     let src = r#"{"s":"f}"#;
-    let mut it = Lexer::new(src.bytes());
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
 
     // unclosed strings are invalid
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
-                                                        span: Span { first: 5,
-                                                                     end:  8 } }));
+                                                        buf: Buffer::Span(Span { first: 5,
+                                                                     end:  8 })}));
 }
 
 #[test]
 fn backslash_escapes_backslash_in_string_value() {
     let src = r#"{"s":"f\\"}"#;
-    let mut it = Lexer::new(src.bytes());
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
 
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::String, 
-                                                        span: Span { first: 5,
-                                                                     end:  10 } }));
+                                                        buf: Buffer::Span(Span { first: 5,
+                                                                     end:  10 })}));
 
     let src = r#"{"s":"f\"}"#;
-    let mut it = Lexer::new(src.bytes());
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
 
     assert_eq!(it.by_ref().skip(3).next(), Some(Token { kind: TokenType::Invalid, 
-                                                        span: Span { first: 5,
-                                                                     end:  10 } }));
+                                                        buf: Buffer::Span(Span { first: 5,
+                                                                     end:  10 })}));
 }
 
 
@@ -94,10 +94,10 @@ fn special_values_closed_and_unclosed() {
                                           (r#"{"v":-1.23}"#, TokenType::Number, 5, 10),
                                           (r#"{"v":1.}"#, TokenType::Number, 5, 7),
                                           (r#"{"v":.}"#, TokenType::Number, 5, 6),] {
-        assert_eq!(Lexer::new(src.bytes()).skip(3).next(), 
+        assert_eq!(Lexer::new(src.bytes(), BufferType::Span).skip(3).next(), 
                                                     Some(Token { kind: kind.clone(), 
-                                                                 span: Span { first: first,
-                                                                              end: end } }));
+                                                                 buf: Buffer::Span(Span { first: first,
+                                                                              end: end } ) }));
     }
 }
 

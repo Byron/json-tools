@@ -3,6 +3,7 @@ pub struct Lexer<I: Iterator<Item=u8>> {
     chars: I,
     next_byte: Option<u8>,
     cursor: u64,
+    buffer_type: BufferType,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -46,14 +47,14 @@ pub enum TokenType {
     Invalid,
 }
 
-/// A pair of indices into the character stream returned by our source 
+/// A pair of indices into the byte stream returned by our source 
 /// iterator.
 /// It is an exclusive range.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Span {
-    /// Index of the first the unicode character
+    /// Index of the first the byte
     pub first: u64,
-    /// Index one past the last unicode character
+    /// Index one past the last byte
     pub end: u64,
 }
 
@@ -62,19 +63,46 @@ pub struct Span {
 pub struct Token {
     /// The exact type of the token
     pub kind: TokenType,
-    /// The span allows to reference back into the source character stream 
+
+    /// A buffer representing the bytes of this Token. 
+    pub buf: Buffer
+}
+
+/// Representation of a buffer containing items making up a `Token`.
+///
+/// It's either always `Span`, or one of the `*Byte` variants.
+#[derive(Debug, PartialEq, Clone)]
+pub enum Buffer {
+    /// Multiple bytes making up a token. Only set for `TokenType::String` and 
+    /// `TokenType::Number`.
+    MultiByte(Vec<u8>),
+    /// The span allows to reference back into the source byte stream 
     /// to obtain the string making up the token.
-    pub span: Span,
+    /// Please note that for control characters, booleans and null (i.e
+    /// anything that is not `Buffer::MultiByte` you should use 
+    /// `<TokenType as AsRef<str>>::as_ref()`)
+    Span(Span),
+}
+
+/// The type of `Buffer` you want in each `Token`
+pub enum BufferType {
+    Bytes,
+    Span,
 }
 
 impl<I> Lexer<I> where I: Iterator<Item=u8> {
-    /// Returns a new Lexer from a given character iterator.
-    pub fn new(chars: I) -> Lexer<I> {
+    /// Returns a new Lexer from a given byte iterator.
+    pub fn new(chars: I, buffer_type: BufferType) -> Lexer<I> {
         Lexer {
             chars: chars,
             next_byte: None,
             cursor: 0,
+            buffer_type: buffer_type,
         }
+    }
+
+    pub fn into_inner(self) -> I {
+        self.chars
     }
 
     fn put_back(&mut self, c: u8) {
@@ -122,15 +150,19 @@ impl<I> Iterator for Lexer<I>
                     where I: Iterator<Item=u8> {
     type Item = Token;
 
-    /// Lex the underlying character stream to generate tokens
+    /// Lex the underlying bytte stream to generate tokens
     fn next(&mut self) -> Option<Token> {
         let mut t: TokenType = TokenType::Invalid;
 
         let mut first = 0;
         let mut state = Mode::SlowPath;
         let last_cursor = self.cursor;
+        let mut buf: Vec<u8> = Vec::with_capacity(128);
 
         while let Some(c) = self.next_byte() {
+            if let BufferType::Bytes = self.buffer_type {
+                buf.push(c);
+            }
             let mut set_cursor = |cursor| {
                 first = cursor - 1;
             };
@@ -246,21 +278,31 @@ impl<I> Iterator for Lexer<I>
                         }
                         _ => {
                             // Everything here is considered whitespace, which is skipped
+                            if let BufferType::Bytes = self.buffer_type {
+                                buf.pop();
+                            }
                         },
-                    }// end single character match
+                    }// end single byte match
                 }// end case SlowPath
             }// end match state
-        }// end for each character
+        }// end for each byte
 
         if self.cursor == last_cursor {
             None
         } else {
+            let buf = 
+                match (&t, &self.buffer_type) {
+                      (&TokenType::String, &BufferType::Bytes)
+                     |(&TokenType::Number, &BufferType::Bytes) => Buffer::MultiByte(buf),
+                    _ => 
+                        Buffer::Span(Span {
+                                    first: first,
+                                    end: self.cursor
+                                }),
+                };
             Some(Token {
                 kind: t,
-                span: Span {
-                    first: first,
-                    end: self.cursor
-                }
+                buf: buf,
             })
         }
     }

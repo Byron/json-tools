@@ -1,6 +1,8 @@
 use super::{Token, TokenType};
 use std::collections::VecDeque;
 
+/// Removes tokens matching `,? "key": null ,?`.
+/// Is made in a resilient fashion which doesn't require a sane input token stream.
 pub struct FilterNull<I: Iterator<Item=Token>> {
     src: I,
     // NOTE: We could remove the deck and keep the 3 slots we need as Option<Token>
@@ -12,6 +14,7 @@ pub struct FilterNull<I: Iterator<Item=Token>> {
 }
 
 impl<I: Iterator<Item=Token>> FilterNull<I> {
+    /// Returns a new `FilterNull` instance from a `Token` iterator
     pub fn new(src: I) -> FilterNull<I> {
         FilterNull {
             src: src,

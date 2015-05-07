@@ -1,9 +1,9 @@
-#![feature(test)]
+#![feature(test, io)]
 
 extern crate json_tools;
 extern crate test;
 
-use json_tools::{Lexer, FilterNull};
+use json_tools::{Lexer, FilterNull, BufferType};
 
 const NULL_RIDDEN: &'static str = r##"
 {
@@ -115,7 +115,7 @@ const NULL_RIDDEN: &'static str = r##"
 #[bench]
 fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
-        let it = Lexer::new(NULL_RIDDEN.bytes());
+        let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span);
         for t in it {
             test::black_box(t);
         }
@@ -128,10 +128,48 @@ fn lexer_throughput_in_bytes(b: &mut test::Bencher) {
 #[bench]
 fn filter_null_throughput_in_bytes(b: &mut test::Bencher) {
     b.iter(|| {
-        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.bytes()));
+        let f = FilterNull::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span));
         for t in f {
             test::black_box(t);
         }
     });
     b.bytes = NULL_RIDDEN.len() as u64;
 }
+
+
+#[bench]
+fn lexer_throughput_in_bytes_with_cursor(b: &mut test::Bencher) {
+    use std::io::{Cursor, Read};
+    
+    b.iter(|| {
+        let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes()).bytes().filter_map(|r|r.ok()),
+                            BufferType::Span);
+        for t in it {
+            test::black_box(t);
+        }
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
+
+
+#[bench]
+fn lexer_throughput_in_bytes_with_cursor_and_tee(b: &mut test::Bencher) {
+    use std::io::{Cursor, Read};
+    
+    b.iter(|| {
+        let mut keeper = Cursor::new(Vec::<u8>::new());
+        {
+          let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes())
+                                      .tee(&mut keeper)
+                                      .bytes()
+                                      .filter_map(|r|r.ok()),
+                              BufferType::Span);
+          for t in it {
+              test::black_box(t);
+          }
+        }
+        assert_eq!(keeper.into_inner().len(), NULL_RIDDEN.len());
+    });
+    b.bytes = NULL_RIDDEN.len() as u64;
+}
+

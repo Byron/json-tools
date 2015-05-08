@@ -1,3 +1,13 @@
+<a name="v0.1.1"></a>
+## v0.1.1 (2015-05-08)
+
+
+#### Bug Fixes
+
+* **token-reader**  offset-map for target buffer ([57768da1](https://github.com/Byron/json-tools/commit/57768da16ca72505a8424e012d4525e9bf583fd6), closes [#6](https://github.com/Byron/json-tools/issues/6))
+
+
+
 <a name="v0.1.0"></a>
 ## v0.1.0 (2015-05-08)
 

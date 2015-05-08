@@ -1,6 +1,6 @@
 extern crate json_tools;
 
-use std::io::Read;
+use std::io::{Read, Cursor, self};
 use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType, TokenReader};
 
 #[test]
@@ -29,6 +29,11 @@ fn filter_null_values() {
         assert_eq!(new_filter(BufferType::Span).count(), fcount);
 
         for bt in &[BufferType::Bytes(128), BufferType::Span] {
+            let mut r = TokenReader::new(new_filter(bt.clone()), Some(src));
+            let mut dst = Cursor::new(Vec::with_capacity(src.len()));
+            io::copy(&mut r, &mut dst).unwrap();
+            assert_eq!(&String::from_utf8(dst.into_inner()).unwrap(), want);
+
             let mut buf: Vec<u8> = Vec::new();
             let mut byte = [0u8];
             let mut r = TokenReader::new(new_filter(bt.clone()), Some(src));

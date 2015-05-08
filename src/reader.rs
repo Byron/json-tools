@@ -79,7 +79,8 @@ impl<'a, I: Iterator<Item=Token>> Read for TokenReader<'a, I> {
                             _ => t.kind.as_ref().as_bytes(),
                         };
                     let btc = cmp::min(bytes.len(), bl);
-                    copy_memory(&bytes[..btc], buf);
+                    let ofs = buf.len() - bl;
+                    copy_memory(&bytes[..btc], &mut buf[ofs .. ofs + btc]);
                     bl -= btc;
 
                     if btc < bytes.len() {

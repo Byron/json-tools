@@ -102,6 +102,7 @@ fn special_values_closed_and_unclosed() {
 }
 
 #[test]
-fn multi_line_strings() {
-    // Add code here
+fn whitespace_at_end() {
+  assert!(Lexer::new("{} ".bytes(), BufferType::Span)
+                .any(|t| t.kind == TokenType::Invalid) == false)
 }

@@ -7,7 +7,8 @@ use super::{Token, TokenType, Buffer};
 pub struct TokenReader<'a, I: Iterator<Item=Token>> {
     iter: I,
     src: Option<&'a str>,
-    buf: Vec<u8>
+    buf: Vec<u8>,
+    ofs: usize,
 }
 
 impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
@@ -15,7 +16,8 @@ impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
         TokenReader {
             iter: iter,
             src: source,
-            buf: Vec::with_capacity(128)
+            buf: Vec::with_capacity(128),
+            ofs: 0
         }
     }
 }
@@ -29,11 +31,14 @@ impl<'a, I: Iterator<Item=Token>> Read for TokenReader<'a, I> {
         // Bytes from Cache
         let mut bl = buf.len();
         if self.buf.len() > 0 {
-            let btc = cmp::min(self.buf.len(), buf.len());
-            let new_buf = self.buf.split_off(btc);
-            copy_memory(&self.buf, buf);
-            self.buf = new_buf;
+            let btc = cmp::min(self.buf.len() - self.ofs, buf.len());
+            copy_memory(&self.buf[self.ofs .. self.ofs + btc], buf);
             bl -= btc;
+            self.ofs += btc;
+            if self.ofs == self.buf.len() {
+                self.buf.clear();
+                self.ofs = 0;
+            }
         }
         if bl == 0 {
             return Ok(buf.len());

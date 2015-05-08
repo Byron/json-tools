@@ -174,7 +174,7 @@ impl<I> Iterator for Lexer<I>
 
     /// Lex the underlying bytte stream to generate tokens
     fn next(&mut self) -> Option<Token> {
-        let mut t: TokenType = TokenType::Invalid;
+        let mut t: Option<TokenType> = None;
 
         let mut first = 0;
         let mut state = Mode::SlowPath;
@@ -201,7 +201,7 @@ impl<I> Iterator for Lexer<I>
                     }
                     match c {
                         b'"' => {
-                            t = TokenType::String;
+                            t = Some(TokenType::String);
                             break;
                         },
                         b'\\' => {
@@ -218,7 +218,9 @@ impl<I> Iterator for Lexer<I>
                     if *i == 3 {
                         // we know b[0] is b'n'
                         if b[1] == b'u' && b[2] == b'l' && b[3] == b'l' {
-                            t = TokenType::Null;
+                            t = Some(TokenType::Null);
+                        } else {
+                            t = Some(TokenType::Invalid);
                         }
                         break;
                     } else {
@@ -237,7 +239,7 @@ impl<I> Iterator for Lexer<I>
                             continue;
                         },
                         _ => {
-                            t = TokenType::Number;
+                            t = Some(TokenType::Number);
                             self.put_back(c);
                             break;
                         }
@@ -248,7 +250,9 @@ impl<I> Iterator for Lexer<I>
                     if *i == 3 {
                         // we know b[0] is b't'
                         if b[1] == b'r' && b[2] == b'u' && b[3] == b'e' {
-                            t = TokenType::BooleanTrue;
+                            t = Some(TokenType::BooleanTrue);
+                        } else {
+                            t = Some(TokenType::Invalid);
                         }
                         break;
                     } else {
@@ -261,7 +265,9 @@ impl<I> Iterator for Lexer<I>
                     if *i == 4 {
                         // we know b[0] is b'f'
                         if b[1] == b'a' && b[2] == b'l' && b[3] == b's' && b[4] == b'e' {
-                            t = TokenType::BooleanFalse;
+                            t = Some(TokenType::BooleanFalse);
+                        } else {
+                            t = Some(TokenType::Invalid);
                         }
                         break;
                     } else {
@@ -271,14 +277,16 @@ impl<I> Iterator for Lexer<I>
                 },
                 Mode::SlowPath => {
                     match c {
-                        b'{' => { t = TokenType::CurlyOpen; set_cursor(self.cursor); break; },
-                        b'}' => { t = TokenType::CurlyClose; set_cursor(self.cursor); break; },
+                        b'{' => { t = Some(TokenType::CurlyOpen); set_cursor(self.cursor); break; },
+                        b'}' => { t = Some(TokenType::CurlyClose); set_cursor(self.cursor); break; },
                         b'"' => {
                             state = Mode::String(false);
                             if let Some(ref mut v) = buf {
                                 v.push(c);
                             } else {
                                 set_cursor(self.cursor);
+                                // it starts at invalid, and once we know it closes, it's a string
+                                t = Some(TokenType::Invalid);
                             }
                         },
                         b'n' => {
@@ -303,13 +311,13 @@ impl<I> Iterator for Lexer<I>
                             state = Mode::False([c, b'x', b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
                         },
-                        b'[' => { t = TokenType::BracketOpen; set_cursor(self.cursor); break; },
-                        b']' => { t = TokenType::BracketClose; set_cursor(self.cursor); break; },
-                        b':' => { t = TokenType::Colon; set_cursor(self.cursor); break; },
-                        b',' => { t = TokenType::Comma; set_cursor(self.cursor); break; },
+                        b'[' => { t = Some(TokenType::BracketOpen); set_cursor(self.cursor); break; },
+                        b']' => { t = Some(TokenType::BracketClose); set_cursor(self.cursor); break; },
+                        b':' => { t = Some(TokenType::Colon); set_cursor(self.cursor); break; },
+                        b',' => { t = Some(TokenType::Comma); set_cursor(self.cursor); break; },
                         b'\\' => {
                             // invalid
-                            debug_assert_eq!(t, TokenType::Invalid);
+                            t = Some(TokenType::Invalid);                            
                             set_cursor(self.cursor);
                             break
                         }
@@ -321,24 +329,29 @@ impl<I> Iterator for Lexer<I>
             }// end match state
         }// end for each byte
 
-        if self.cursor == last_cursor {
-            None
-        } else {
-            let buf = 
-                match (&t, buf) {
-                      (&TokenType::String, Some(b))
-                     |(&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
-                    _ => {
-                        Buffer::Span(Span {
-                                    first: first,
-                                    end: self.cursor
-                                })
-                    }
-                };
-            Some(Token {
-                kind: t,
-                buf: buf,
-            })
+        match t {
+            None => None,
+            Some(t) => {
+                if self.cursor == last_cursor {
+                    None
+                } else {
+                    let buf = 
+                        match (&t, buf) {
+                              (&TokenType::String, Some(b))
+                             |(&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
+                            _ => {
+                                Buffer::Span(Span {
+                                            first: first,
+                                            end: self.cursor
+                                        })
+                            }
+                        };
+                    Some(Token {
+                        kind: t,
+                        buf: buf,
+                    })
+                }
+            }
         }
     }
 }

@@ -63,7 +63,7 @@ impl<'a, I: Iterator<Item=Token>> Read for TokenReader<'a, I> {
                                     }
                                 }
                             },
-                            TokenType::Invalid => "".as_bytes(), // TODO: What to do ? Configure ?
+                            TokenType::Invalid => "".as_bytes(),
                             _ => t.kind.as_ref().as_bytes(),
                         };
                     let btc = cmp::min(bytes.len(), bl);

@@ -6,13 +6,17 @@ This library contains a collection of tools to help interacting with json encode
    - Without any intention of being feature complete, it is able to split ascii json data streams
      into their lexical tokens, keeping track of the character spans that make them up.
    - facilitates writing higher-level parsers and filters
-* **Null-Value Filter**
-   - A utility to filter lexical tokens which belong to keys that have null values.
-     This makes it easy to re-assemble json data streams and strip them off their null values.
-
+* **Key-Value Filter**
+   - A utility to filter lexical tokens which belong to keys that have values of a given type.
+     This makes it easy to re-assemble json data streams and strip them off their null values, for example.
+* **TokenReader**
+	- An adapter to convert a stream of `Tokens` into a stream of bytes, supprting the `Read` trait.
+	- Use it to convert filtered and/or manipulated token-streams back into byte-streams.
+	- Configure the output style, to achieve effects like pretty-printing or strip the output of all whitespace.
 
 # Usage
 [![Build Status](https://travis-ci.org/Byron/json-tools.svg?branch=master)](https://travis-ci.org/Byron/json-tools)
+
 Add this to your *Cargo.toml*
 ```toml
 [dependencies]

@@ -25,13 +25,13 @@ extern crate json_tools;
 
 use json_tools::Lexer;
 
-for token in Lexer::new(r#"{ "face": "😂" }"#.chars()) {
+for token in Lexer::new(r#"{ "face": "😂" }"#.bytes()) {
 	println!("{:?}", token);
 }
 ```
 
 # Motivation
 
-This library may possibly never grow bigger than the 2 features originally mentioned, as it was created
+This library may possibly never grow bigger than the two features originally mentioned, as it was created
 as a workaround to missing features in [`serde`](https://github.com/serde-rs/serde).
 

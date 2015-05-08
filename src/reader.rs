@@ -1,4 +1,4 @@
-use std::io::{Read, Result, self};
+use std::io::{Read, Result};
 use std::slice::bytes::copy_memory;
 use std::cmp;
 
@@ -43,12 +43,7 @@ impl<'a, I: Iterator<Item=Token>> Read for TokenReader<'a, I> {
         while bl > 0 {
             match self.iter.next() {
                 None => {
-                    // if we have not read any byte yet, we may return an error
-                    if bl == buf.len() {
-                        return Err(io::Error::new(io::ErrorKind::Other, "End of Token-Iterator"))
-                    } else {
-                        return Ok(buf.len() - bl)
-                    }
+                    return Ok(buf.len() - bl)
                 },
                 Some(t) => {
                     let bytes: &[u8] = 

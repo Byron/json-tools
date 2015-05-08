@@ -69,7 +69,7 @@ impl AsRef<str> for TokenType {
 /// A pair of indices into the byte stream returned by our source 
 /// iterator.
 /// It is an exclusive range.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Span {
     /// Index of the first the byte
     pub first: u64,

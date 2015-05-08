@@ -4,6 +4,11 @@ use std::cmp;
 
 use super::{Token, TokenType, Buffer};
 
+/// An adapter to convert a stream of `Token`s into bytes by implementing an
+/// `std::io::Read` trait.
+///
+/// Currently it produces output without any whitespace, suitable for efficient
+/// sending and for handling by machines.
 pub struct TokenReader<'a, I: Iterator<Item=Token>> {
     iter: I,
     src: Option<&'a str>,
@@ -12,6 +17,13 @@ pub struct TokenReader<'a, I: Iterator<Item=Token>> {
 }
 
 impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
+    /// Returns a new `TokenReader`
+    /// # Args
+    /// * `iter` - the iterator producing `Token` instances we are to convert
+    /// * `source` - an optional, original string from which the tokens were 
+    ///              generated. This offers the best performance when 
+    ///              serializing tokens, as they can refer to their original
+    ///              `&str` slice.
     pub fn new(iter: I, source: Option<&'a str>) -> TokenReader<'a, I> {
         TokenReader {
             iter: iter,

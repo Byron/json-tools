@@ -4,8 +4,8 @@ use std::collections::VecDeque;
 /// Removes tokens matching `,? "key": <type> ,?`., where `<type>` is a given 
 /// token type. Useful for removing `null` values, or all numbers, for instance.
 /// Is made in a resilient fashion which doesn't require a sane input token stream.
-pub struct FilterTypedKeyValuePairs<I: Iterator<Item=Token>> {
-    src: I,
+pub struct FilterTypedKeyValuePairs<I: IntoIterator<Item=Token>> {
+    src: I::IntoIter,
     // NOTE: We could remove the deck and keep the 3 slots we need as Option<Token>
     // 0: optional comma
     // 1: first string
@@ -15,11 +15,11 @@ pub struct FilterTypedKeyValuePairs<I: Iterator<Item=Token>> {
     value_type: TokenType,
 }
 
-impl<I: Iterator<Item=Token>> FilterTypedKeyValuePairs<I> {
+impl<I: IntoIterator<Item=Token>> FilterTypedKeyValuePairs<I> {
     /// Returns a new `FilterTypedKeyValuePairs` instance from a `Token` iterator
     pub fn new(src: I, value_type: TokenType) -> FilterTypedKeyValuePairs<I> {
         FilterTypedKeyValuePairs {
-            src: src,
+            src: src.into_iter(),
             buf: VecDeque::with_capacity(3),
             next_token: None,
             value_type: value_type
@@ -39,7 +39,7 @@ impl<I: Iterator<Item=Token>> FilterTypedKeyValuePairs<I> {
     }
 }
 
-impl<I> Iterator for FilterTypedKeyValuePairs<I> where I: Iterator<Item=Token>{
+impl<I> Iterator for FilterTypedKeyValuePairs<I> where I: IntoIterator<Item=Token>{
     type Item = Token;
 
     fn next(&mut self) -> Option<Token> {

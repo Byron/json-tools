@@ -9,14 +9,14 @@ use super::{Token, TokenType, Buffer};
 ///
 /// Currently it produces output without any whitespace, suitable for efficient
 /// sending and for handling by machines.
-pub struct TokenReader<'a, I: Iterator<Item=Token>> {
-    iter: I,
+pub struct TokenReader<'a, I: IntoIterator<Item=Token>> {
+    iter: I::IntoIter,
     src: Option<&'a str>,
     buf: Vec<u8>,
     ofs: usize,
 }
 
-impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
+impl<'a, I: IntoIterator<Item=Token>> TokenReader<'a, I> {
     /// Returns a new `TokenReader`
     /// # Args
     /// * `iter` - the iterator producing `Token` instances we are to convert
@@ -26,7 +26,7 @@ impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
     ///              `&str` slice.
     pub fn new(iter: I, source: Option<&'a str>) -> TokenReader<'a, I> {
         TokenReader {
-            iter: iter,
+            iter: iter.into_iter(),
             src: source,
             buf: Vec::with_capacity(128),
             ofs: 0
@@ -34,7 +34,7 @@ impl<'a, I: Iterator<Item=Token>> TokenReader<'a, I> {
     }
 }
 
-impl<'a, I: Iterator<Item=Token>> Read for TokenReader<'a, I> {
+impl<'a, I: IntoIterator<Item=Token>> Read for TokenReader<'a, I> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         if buf.len() == 0 {
             return Ok(0)

@@ -1,6 +1,6 @@
 /// A lexer for utf-8 encoded json data
-pub struct Lexer<I: Iterator<Item=u8>> {
-    chars: I,
+pub struct Lexer<I: IntoIterator<Item=u8>> {
+    chars: I::IntoIter,
     next_byte: Option<u8>,
     cursor: u64,
     buffer_type: BufferType,
@@ -112,18 +112,18 @@ pub enum BufferType {
     Span,
 }
 
-impl<I> Lexer<I> where I: Iterator<Item=u8> {
+impl<I> Lexer<I> where I: IntoIterator<Item=u8> {
     /// Returns a new Lexer from a given byte iterator.
     pub fn new(chars: I, buffer_type: BufferType) -> Lexer<I> {
         Lexer {
-            chars: chars,
+            chars: chars.into_iter(),
             next_byte: None,
             cursor: 0,
             buffer_type: buffer_type,
         }
     }
 
-    pub fn into_inner(self) -> I {
+    pub fn into_inner(self) -> I::IntoIter {
         self.chars
     }
 
@@ -169,7 +169,7 @@ enum Mode {
 }
 
 impl<I> Iterator for Lexer<I> 
-                    where I: Iterator<Item=u8> {
+                    where I: IntoIterator<Item=u8> {
     type Item = Token;
 
     /// Lex the underlying bytte stream to generate tokens

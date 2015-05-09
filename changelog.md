@@ -1,3 +1,13 @@
+<a name="v0.2.0"></a>
+## v0.2.0 (2015-05-09)
+
+
+#### Features
+
+* **iterator-ext**  more fun with Token-Iterators ([15dc5c5f](https://github.com/Byron/json-tools/commit/15dc5c5f9a3e153afdbeca3e4d741288c2f77111), closes [#3](https://github.com/Byron/json-tools/issues/3))
+
+
+
 <a name="v0.1.1"></a>
 ## v0.1.1 (2015-05-08)
 

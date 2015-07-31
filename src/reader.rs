@@ -1,8 +1,20 @@
-use std::io::{Read, Result};
-use std::slice::bytes::copy_memory;
+use std::io::{Read, Result, Write};
 use std::cmp;
+use std::ptr;
 
 use super::{Token, TokenType, Buffer};
+
+fn copy_memory(src: &[u8], dst: &mut [u8]) {
+    let len_src = src.len();
+    assert!(dst.len() >= len_src);
+    // `dst` is unaliasable, so we know statically it doesn't overlap
+    // with `src`.
+    unsafe {
+        ptr::copy_nonoverlapping(src.as_ptr(),
+                                 dst.as_mut_ptr(),
+                                 len_src);
+    }
+}
 
 /// An adapter to convert a stream of `Token`s into bytes by implementing an
 /// `std::io::Read` trait.
@@ -20,8 +32,8 @@ impl<'a, I: IntoIterator<Item=Token>> TokenReader<'a, I> {
     /// Returns a new `TokenReader`
     /// # Args
     /// * `iter` - the iterator producing `Token` instances we are to convert
-    /// * `source` - an optional, original string from which the tokens were 
-    ///              generated. This offers the best performance when 
+    /// * `source` - an optional, original string from which the tokens were
+    ///              generated. This offers the best performance when
     ///              serializing tokens, as they can refer to their original
     ///              `&str` slice.
     pub fn new(iter: I, source: Option<&'a str>) -> TokenReader<'a, I> {
@@ -63,7 +75,7 @@ impl<'a, I: IntoIterator<Item=Token>> Read for TokenReader<'a, I> {
                     return Ok(buf.len() - bl)
                 },
                 Some(t) => {
-                    let bytes: &[u8] = 
+                    let bytes: &[u8] =
                         match t.kind {
                              TokenType::String
                             |TokenType::Number => {
@@ -85,7 +97,7 @@ impl<'a, I: IntoIterator<Item=Token>> Read for TokenReader<'a, I> {
 
                     if btc < bytes.len() {
                         debug_assert!(bl == 0);
-                        self.buf.push_all(&bytes[btc..])
+                        try!(self.buf.write_all(&bytes[btc..]));
                     }
 
                     if bl == 0 {

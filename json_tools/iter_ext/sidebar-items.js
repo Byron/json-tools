@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["IteratorExt","Applies convenience constructors to all `Iterator<Item=Token>` types"]]});

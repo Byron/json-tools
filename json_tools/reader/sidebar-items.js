@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TokenReader","An adapter to convert a stream of `Token`s into bytes by implementing an `std::io::Read` trait."]]});

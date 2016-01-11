@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["FilterTypedKeyValuePairs","Removes tokens matching `,? \"key\": <type> ,?`., where `<type>` is a given token type. Useful for removing `null` values, or all numbers, for instance. Is made in a resilient fashion which doesn't require a sane input token stream."]]});

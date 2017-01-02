@@ -1,3 +1,17 @@
+<a name="v1.0.0"></a>
+## v1.0.0 (2017-01-02)
+
+
+#### Improvements
+
+* **travis:**  more rust versions and no travis-cargo ([fd4cd367](https://github.com/Byron/json-tools/commit/fd4cd36794eba4de0a6ebbe000ddddc8ce5c96d4))
+
+#### Bug Fixes
+
+* **benchmark:**  remove old code ([f969498a](https://github.com/Byron/json-tools/commit/f969498a5f17b4d0f260e7e1e0ea46007abe75f0))
+
+
+
 <a name="v0.3.0"></a>
 ## v0.3.0 (2015-05-09)
 

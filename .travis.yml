@@ -1,15 +1,10 @@
 language: rust
 rust:
+- stable
 - beta
-before_script:
-- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+- nightly
 script:
-- travis-cargo build
-- travis-cargo test
-- travis-cargo bench
-- travis-cargo doc
-after_success:
-- travis-cargo doc-upload
-env:
-  global:
-    secure: V4Xyd4DQi24gRnM+J26K8VF/8/Ah8OkTt0niyX0l2Auu9rdAkytWgIILwiD3uucknLIR3SOTZE6nPQizaXGpNnWo9zl+HZlXtx8DjPd37/UH9ejH/kirH4GJl1aryxgti2qs4KkX0ooomMDDibtZ8dy405pgfgySoo/jFKPhTdg=
+- cargo build
+- cargo test
+- cargo bench
+- cargo doc

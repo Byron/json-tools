@@ -1,5 +1,5 @@
 /// A lexer for utf-8 encoded json data
-pub struct Lexer<I: IntoIterator<Item=u8>> {
+pub struct Lexer<I: IntoIterator<Item = u8>> {
     chars: I::IntoIter,
     next_byte: Option<u8>,
     cursor: u64,
@@ -23,7 +23,6 @@ pub enum TokenType {
     /// `,`
     Comma,
 
-
     /// A json string , like `"foo"`
     String,
     /// `true`
@@ -41,7 +40,7 @@ pub enum TokenType {
     // Number,
     /// `null`
     Null,
-    
+
     /// The type of the token could not be identified.
     /// Should be removed if this lexer is ever to be feature complete
     Invalid,
@@ -66,7 +65,7 @@ impl AsRef<str> for TokenType {
     }
 }
 
-/// A pair of indices into the byte stream returned by our source 
+/// A pair of indices into the byte stream returned by our source
 /// iterator.
 /// It is an exclusive range.
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -83,8 +82,8 @@ pub struct Token {
     /// The exact type of the token
     pub kind: TokenType,
 
-    /// A buffer representing the bytes of this Token. 
-    pub buf: Buffer
+    /// A buffer representing the bytes of this Token.
+    pub buf: Buffer,
 }
 
 /// Representation of a buffer containing items making up a `Token`.
@@ -92,13 +91,13 @@ pub struct Token {
 /// It's either always `Span`, or one of the `*Byte` variants.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Buffer {
-    /// Multiple bytes making up a token. Only set for `TokenType::String` and 
+    /// Multiple bytes making up a token. Only set for `TokenType::String` and
     /// `TokenType::Number`.
     MultiByte(Vec<u8>),
-    /// The span allows to reference back into the source byte stream 
+    /// The span allows to reference back into the source byte stream
     /// to obtain the string making up the token.
     /// Please note that for control characters, booleans and null (i.e
-    /// anything that is not `Buffer::MultiByte` you should use 
+    /// anything that is not `Buffer::MultiByte` you should use
     /// `<TokenType as AsRef<str>>::as_ref()`)
     Span(Span),
 }
@@ -106,13 +105,15 @@ pub enum Buffer {
 /// The type of `Buffer` you want in each `Token`
 #[derive(Debug, PartialEq, Clone)]
 pub enum BufferType {
-    /// Use a `Buffer::MultiByte` were appropriate. Initialize it with the 
+    /// Use a `Buffer::MultiByte` were appropriate. Initialize it with the
     /// given capcity (to obtain higher performance when pushing charcters)
     Bytes(usize),
     Span,
 }
 
-impl<I> Lexer<I> where I: IntoIterator<Item=u8> {
+impl<I> Lexer<I>
+    where I: IntoIterator<Item = u8>
+{
     /// Returns a new Lexer from a given byte iterator.
     pub fn new(chars: I, buffer_type: BufferType) -> Lexer<I> {
         Lexer {
@@ -138,7 +139,7 @@ impl<I> Lexer<I> where I: IntoIterator<Item=u8> {
             Some(c) => {
                 self.cursor += 1;
                 Some(c)
-            },
+            }
             None => {
                 let res = self.chars.next();
                 match res {
@@ -168,8 +169,9 @@ enum Mode {
     SlowPath,
 }
 
-impl<I> Iterator for Lexer<I> 
-                    where I: IntoIterator<Item=u8> {
+impl<I> Iterator for Lexer<I>
+    where I: IntoIterator<Item = u8>
+{
     type Item = Token;
 
     /// Lex the underlying bytte stream to generate tokens
@@ -179,11 +181,10 @@ impl<I> Iterator for Lexer<I>
         let mut first = 0;
         let mut state = Mode::SlowPath;
         let last_cursor = self.cursor;
-        let mut buf = 
-            match self.buffer_type {
-                BufferType::Bytes(capacity) => Some(Vec::<u8>::with_capacity(capacity)),
-                BufferType::Span => None,
-            };
+        let mut buf = match self.buffer_type {
+            BufferType::Bytes(capacity) => Some(Vec::<u8>::with_capacity(capacity)),
+            BufferType::Span => None,
+        };
 
         while let Some(c) = self.next_byte() {
             let mut set_cursor = |cursor| {
@@ -203,16 +204,16 @@ impl<I> Iterator for Lexer<I>
                         b'"' => {
                             t = Some(TokenType::String);
                             break;
-                        },
+                        }
                         b'\\' => {
                             *ign_next = true;
-                            continue;    
-                        },
+                            continue;
+                        }
                         _ => {
                             continue;
                         }
                     }
-                },
+                }
                 Mode::Null(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 3 {
@@ -227,17 +228,15 @@ impl<I> Iterator for Lexer<I>
                         *i += 1;
                         continue;
                     }
-                },
+                }
                 Mode::Number => {
                     match c {
-                         b'0' ... b'9'
-                        |b'-'
-                        |b'.' => {
+                        b'0'...b'9' | b'-' | b'.' => {
                             if let Some(ref mut v) = buf {
                                 v.push(c);
                             }
                             continue;
-                        },
+                        }
                         _ => {
                             t = Some(TokenType::Number);
                             self.put_back(c);
@@ -259,7 +258,7 @@ impl<I> Iterator for Lexer<I>
                         *i += 1;
                         continue;
                     }
-                },
+                }
                 Mode::False(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 4 {
@@ -274,11 +273,19 @@ impl<I> Iterator for Lexer<I>
                         *i += 1;
                         continue;
                     }
-                },
+                }
                 Mode::SlowPath => {
                     match c {
-                        b'{' => { t = Some(TokenType::CurlyOpen); set_cursor(self.cursor); break; },
-                        b'}' => { t = Some(TokenType::CurlyClose); set_cursor(self.cursor); break; },
+                        b'{' => {
+                            t = Some(TokenType::CurlyOpen);
+                            set_cursor(self.cursor);
+                            break;
+                        }
+                        b'}' => {
+                            t = Some(TokenType::CurlyClose);
+                            set_cursor(self.cursor);
+                            break;
+                        }
                         b'"' => {
                             state = Mode::String(false);
                             if let Some(ref mut v) = buf {
@@ -288,42 +295,54 @@ impl<I> Iterator for Lexer<I>
                                 // it starts at invalid, and once we know it closes, it's a string
                                 t = Some(TokenType::Invalid);
                             }
-                        },
+                        }
                         b'n' => {
                             state = Mode::Null([c, b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
-                        },
-                         b'0' ... b'9'
-                        |b'-'
-                        |b'.'=> {
+                        }
+                        b'0'...b'9' | b'-' | b'.' => {
                             state = Mode::Number;
                             if let Some(ref mut v) = buf {
                                 v.push(c);
                             } else {
                                 set_cursor(self.cursor);
                             }
-                        },
+                        }
                         b't' => {
                             state = Mode::True([c, b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
-                        },
+                        }
                         b'f' => {
                             state = Mode::False([c, b'x', b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
-                        },
-                        b'[' => { t = Some(TokenType::BracketOpen); set_cursor(self.cursor); break; },
-                        b']' => { t = Some(TokenType::BracketClose); set_cursor(self.cursor); break; },
-                        b':' => { t = Some(TokenType::Colon); set_cursor(self.cursor); break; },
-                        b',' => { t = Some(TokenType::Comma); set_cursor(self.cursor); break; },
+                        }
+                        b'[' => {
+                            t = Some(TokenType::BracketOpen);
+                            set_cursor(self.cursor);
+                            break;
+                        }
+                        b']' => {
+                            t = Some(TokenType::BracketClose);
+                            set_cursor(self.cursor);
+                            break;
+                        }
+                        b':' => {
+                            t = Some(TokenType::Colon);
+                            set_cursor(self.cursor);
+                            break;
+                        }
+                        b',' => {
+                            t = Some(TokenType::Comma);
+                            set_cursor(self.cursor);
+                            break;
+                        }
                         b'\\' => {
                             // invalid
-                            t = Some(TokenType::Invalid);                            
+                            t = Some(TokenType::Invalid);
                             set_cursor(self.cursor);
-                            break
+                            break;
                         }
-                        _ => {
-
-                        },
+                        _ => {}
                     }// end single byte match
                 }// end case SlowPath
             }// end match state
@@ -335,17 +354,16 @@ impl<I> Iterator for Lexer<I>
                 if self.cursor == last_cursor {
                     None
                 } else {
-                    let buf = 
-                        match (&t, buf) {
-                              (&TokenType::String, Some(b))
-                             |(&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
-                            _ => {
-                                Buffer::Span(Span {
-                                            first: first,
-                                            end: self.cursor
-                                        })
-                            }
-                        };
+                    let buf = match (&t, buf) {
+                        (&TokenType::String, Some(b)) |
+                        (&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
+                        _ => {
+                            Buffer::Span(Span {
+                                first: first,
+                                end: self.cursor,
+                            })
+                        }
+                    };
                     Some(Token {
                         kind: t,
                         buf: buf,

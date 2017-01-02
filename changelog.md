@@ -1,3 +1,9 @@
+<a name="v1.0.1"></a>
+### v1.0.1 (2017-01-02)
+
+Changed the headline of the crate to be more descriptive.
+
+
 <a name="v1.0.0"></a>
 ## v1.0.0 (2017-01-02)
 

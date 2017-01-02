@@ -1,11 +1,11 @@
-#![feature(test, io)]
+#![feature(test)]
 
 extern crate json_tools;
 extern crate test;
 
 use json_tools::{Lexer, FilterTypedKeyValuePairs, BufferType, TokenType, 
                  TokenReader, Token, Buffer, Span};
-use std::io::{self, Read};
+use std::io;
 
 const NULL_RIDDEN: &'static str = r##"
 {
@@ -257,26 +257,3 @@ fn span_lexer_throughput_with_cursor(b: &mut test::Bencher) {
     });
     b.bytes = NULL_RIDDEN.len() as u64;
 }
-
-
-#[bench]
-fn span_lexer_throughput_with_cursor_and_tee(b: &mut test::Bencher) {
-    use std::io::{Cursor, Read};
-    
-    b.iter(|| {
-        let mut keeper = Cursor::new(Vec::<u8>::new());
-        {
-          let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes())
-                                      .tee(&mut keeper)
-                                      .bytes()
-                                      .filter_map(|r|r.ok()),
-                              BufferType::Span);
-          for t in it {
-              test::black_box(t);
-          }
-        }
-        assert_eq!(keeper.into_inner().len(), NULL_RIDDEN.len());
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
-

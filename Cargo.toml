@@ -1,9 +1,9 @@
 [package]
 name = "json-tools"
-version = "0.3.0"
+version = "1.0.0"
 authors = ["Sebastian Thiel <byronimo@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A collections of tools to handle json encoded data"
 repository = "https://github.com/Byron/json-tools"
 keywords = ["json", "tools", "lexer"]
-documentation = "http://byron.github.io/json-tools"
+documentation = "https://docs.rs/crate/json-tools"

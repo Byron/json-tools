@@ -40,7 +40,8 @@ impl<I: IntoIterator<Item = Token>> FilterTypedKeyValuePairs<I> {
 }
 
 impl<I> Iterator for FilterTypedKeyValuePairs<I>
-    where I: IntoIterator<Item = Token>
+where
+    I: IntoIterator<Item = Token>,
 {
     type Item = Token;
 
@@ -136,9 +137,9 @@ impl<I> Iterator for FilterTypedKeyValuePairs<I>
                             }
                         }
                         _ => return first_token(&mut self.buf, first_str_candidate),
-                    }// end match token kind (string?)
-                }// end inner str candidate LOOP
-            }// end have token
+                    } // end match token kind (string?)
+                } // end inner str candidate LOOP
+            } // end have token
             None => None,
         }
     }

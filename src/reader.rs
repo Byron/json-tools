@@ -2,7 +2,7 @@ use std::io::{Read, Result, Write};
 use std::cmp;
 use std::ptr;
 
-use super::{Token, TokenType, Buffer};
+use super::{Buffer, Token, TokenType};
 
 fn copy_memory(src: &[u8], dst: &mut [u8]) {
     let len_src = src.len();
@@ -72,17 +72,13 @@ impl<'a, I: IntoIterator<Item = Token>> Read for TokenReader<'a, I> {
                 None => return Ok(buf.len() - bl),
                 Some(t) => {
                     let bytes: &[u8] = match t.kind {
-                        TokenType::String | TokenType::Number => {
-                            match t.buf {
-                                Buffer::MultiByte(ref b) => &b,
-                                Buffer::Span(ref s) => {
-                                    match self.src {
-                                        Some(b) => b[s.first as usize..s.end as usize].as_bytes(),
-                                        None => panic!("Must set source if tokens don't provide byter buffers"),
-                                    }
-                                }
-                            }
-                        }
+                        TokenType::String | TokenType::Number => match t.buf {
+                            Buffer::MultiByte(ref b) => &b,
+                            Buffer::Span(ref s) => match self.src {
+                                Some(b) => b[s.first as usize..s.end as usize].as_bytes(),
+                                None => panic!("Must set source if tokens don't provide byter buffers"),
+                            },
+                        },
                         TokenType::Invalid => "".as_bytes(),
                         _ => t.kind.as_ref().as_bytes(),
                     };
@@ -100,8 +96,8 @@ impl<'a, I: IntoIterator<Item = Token>> Read for TokenReader<'a, I> {
                         return Ok(buf.len());
                     }
                 }
-            }// match iter.next()
-        }// end while there are bytes to produce
+            } // match iter.next()
+        } // end while there are bytes to produce
         unreachable!();
     }
 }

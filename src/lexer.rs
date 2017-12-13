@@ -112,7 +112,8 @@ pub enum BufferType {
 }
 
 impl<I> Lexer<I>
-    where I: IntoIterator<Item = u8>
+where
+    I: IntoIterator<Item = u8>,
 {
     /// Returns a new Lexer from a given byte iterator.
     pub fn new(chars: I, buffer_type: BufferType) -> Lexer<I> {
@@ -170,7 +171,8 @@ enum Mode {
 }
 
 impl<I> Iterator for Lexer<I>
-    where I: IntoIterator<Item = u8>
+where
+    I: IntoIterator<Item = u8>,
 {
     type Item = Token;
 
@@ -229,21 +231,19 @@ impl<I> Iterator for Lexer<I>
                         continue;
                     }
                 }
-                Mode::Number => {
-                    match c {
-                        b'0'...b'9' | b'-' | b'.' => {
-                            if let Some(ref mut v) = buf {
-                                v.push(c);
-                            }
-                            continue;
+                Mode::Number => match c {
+                    b'0'...b'9' | b'-' | b'.' => {
+                        if let Some(ref mut v) = buf {
+                            v.push(c);
                         }
-                        _ => {
-                            t = Some(TokenType::Number);
-                            self.put_back(c);
-                            break;
-                        }
+                        continue;
                     }
-                }
+                    _ => {
+                        t = Some(TokenType::Number);
+                        self.put_back(c);
+                        break;
+                    }
+                },
                 Mode::True(ref mut b, ref mut i) => {
                     b[*i] = c;
                     if *i == 3 {
@@ -343,10 +343,10 @@ impl<I> Iterator for Lexer<I>
                             break;
                         }
                         _ => {}
-                    }// end single byte match
-                }// end case SlowPath
-            }// end match state
-        }// end for each byte
+                    } // end single byte match
+                } // end case SlowPath
+            } // end match state
+        } // end for each byte
 
         match t {
             None => None,
@@ -355,19 +355,13 @@ impl<I> Iterator for Lexer<I>
                     None
                 } else {
                     let buf = match (&t, buf) {
-                        (&TokenType::String, Some(b)) |
-                        (&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
-                        _ => {
-                            Buffer::Span(Span {
-                                first: first,
-                                end: self.cursor,
-                            })
-                        }
+                        (&TokenType::String, Some(b)) | (&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
+                        _ => Buffer::Span(Span {
+                            first: first,
+                            end: self.cursor,
+                        }),
                     };
-                    Some(Token {
-                        kind: t,
-                        buf: buf,
-                    })
+                    Some(Token { kind: t, buf: buf })
                 }
             }
         }

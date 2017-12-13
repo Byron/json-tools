@@ -1,5 +1,4 @@
-use super::{Token, FilterTypedKeyValuePairs, TokenType, TokenReader};
-
+use super::{FilterTypedKeyValuePairs, Token, TokenReader, TokenType};
 
 /// Applies convenience constructors to all `Iterator<Item=Token>` types
 pub trait IteratorExt: Iterator<Item = Token> {
@@ -8,7 +7,8 @@ pub trait IteratorExt: Iterator<Item = Token> {
     ///
     /// It is useful, for example, to get rid of `null` values on a lexical level.
     fn filter_key_value_by_type(self, token_type: TokenType) -> FilterTypedKeyValuePairs<Self>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         FilterTypedKeyValuePairs::new(self, token_type)
     }
@@ -21,7 +21,8 @@ pub trait IteratorExt: Iterator<Item = Token> {
     ///              serializing tokens, as they can refer to their original
     ///              `&str` slice.
     fn reader<'a>(self, source: Option<&'a str>) -> TokenReader<Self>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         TokenReader::new(self, source)
     }

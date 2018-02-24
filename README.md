@@ -1,3 +1,7 @@
+[![](http://meritbadge.herokuapp.com/json-tools)](https://crates.io/crates/json-tools)
+[![Build Status](https://travis-ci.org/Byron/json-tools.svg?branch=master)](https://travis-ci.org/Byron/json-tools)
+
+
 This library contains a collection of tools to help interacting with json encoded data.
 
 # Features
@@ -15,7 +19,6 @@ This library contains a collection of tools to help interacting with json encode
 	- Configure the output style, to achieve effects like pretty-printing or strip the output of all whitespace.
 
 # Usage
-[![Build Status](https://travis-ci.org/Byron/json-tools.svg?branch=master)](https://travis-ci.org/Byron/json-tools)
 
 Add this to your *Cargo.toml*
 ```toml

@@ -137,6 +137,12 @@ fn special_values_closed_and_unclosed() {
         (r#"{"v":-1.23}"#, TokenType::Number, 5, 10),
         (r#"{"v":1.}"#, TokenType::Number, 5, 7),
         (r#"{"v":.}"#, TokenType::Number, 5, 6),
+        (r#"{"v":1.23E12}"#, TokenType::Number, 5, 12),
+        (r#"{"v":1.23e12}"#, TokenType::Number, 5, 12),
+        (r#"{"v":1.23E+12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23e+12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23E-12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23e-12}"#, TokenType::Number, 5, 13),
     ] {
         assert_eq!(
             Lexer::new(src.bytes(), BufferType::Span).skip(3).next(),

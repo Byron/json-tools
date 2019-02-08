@@ -232,7 +232,7 @@ where
                     }
                 }
                 Mode::Number => match c {
-                    b'0'...b'9' | b'-' | b'.' => {
+                    b'0'...b'9' | b'-' | b'+' | b'.' | b'E' | b'e' => {
                         if let Some(ref mut v) = buf {
                             v.push(c);
                         }

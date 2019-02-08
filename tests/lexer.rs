@@ -123,6 +123,53 @@ fn backslash_escapes_backslash_in_string_value() {
 }
 
 #[test]
+fn other_backslash_escapes_in_string_value() {
+    let src = r#"{"s":"\/\b\f\n\r\t\u1a2B"}"#;
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
+
+    assert_eq!(
+        it.by_ref().skip(3).next(),
+        Some(Token {
+            kind: TokenType::String,
+            buf: Buffer::Span(Span { first: 5, end: 25 }),
+        })
+    );
+
+    let src = r#"{"s":"\a"}"#;
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
+
+    assert_eq!(
+        it.by_ref().skip(3).next(),
+        Some(Token {
+            kind: TokenType::Invalid,
+            buf: Buffer::Span(Span { first: 5, end: 8 }),
+        })
+    );
+
+    let src = r#"{"s":"\u123"}"#;
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
+
+    assert_eq!(
+        it.by_ref().skip(3).next(),
+        Some(Token {
+            kind: TokenType::Invalid,
+            buf: Buffer::Span(Span { first: 5, end: 12 }),
+        })
+    );
+
+    let src = r#"{"s":"\u123x"}"#;
+    let mut it = Lexer::new(src.bytes(), BufferType::Span);
+
+    assert_eq!(
+        it.by_ref().skip(3).next(),
+        Some(Token {
+            kind: TokenType::Invalid,
+            buf: Buffer::Span(Span { first: 5, end: 12 }),
+        })
+    );
+}
+
+#[test]
 fn special_values_closed_and_unclosed() {
     for &(src, ref kind, first, end) in &[
         (r#"{"v":null}"#, TokenType::Null, 5, 9),
@@ -137,6 +184,12 @@ fn special_values_closed_and_unclosed() {
         (r#"{"v":-1.23}"#, TokenType::Number, 5, 10),
         (r#"{"v":1.}"#, TokenType::Number, 5, 7),
         (r#"{"v":.}"#, TokenType::Number, 5, 6),
+        (r#"{"v":1.23E12}"#, TokenType::Number, 5, 12),
+        (r#"{"v":1.23e12}"#, TokenType::Number, 5, 12),
+        (r#"{"v":1.23E+12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23e+12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23E-12}"#, TokenType::Number, 5, 13),
+        (r#"{"v":1.23e-12}"#, TokenType::Number, 5, 13),
     ] {
         assert_eq!(
             Lexer::new(src.bytes(), BufferType::Span).skip(3).next(),

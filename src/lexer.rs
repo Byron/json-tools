@@ -157,8 +157,8 @@ where
 
 // Identifies the state of the lexer
 enum Mode {
-    // String parse mode: bool = ignore_next
-    String(bool),
+    // String parse mode: bool = ignore_next, usize = ignore_digits
+    String(bool, usize),
     // `null` parse mode: buf, buf-index
     Null([u8; 4], usize),
     // `true` parse mode
@@ -194,13 +194,38 @@ where
             };
 
             match state {
-                Mode::String(ref mut ign_next) => {
+                Mode::String(ref mut ign_next, ref mut ign_digits) => {
                     if let Some(ref mut v) = buf {
                         v.push(c);
                     }
-                    if *ign_next && (c == b'"' || c == b'\\') {
-                        *ign_next = false;
-                        continue;
+                    if *ign_next {
+                        match c {
+                            b'"' | b'\\' | b'/' | b'b' | b'f' | b'n' | b'r' | b't' => {
+                                *ign_next = false;
+                                continue;
+                            }
+                            b'u' => {
+                                *ign_next = false;
+                                *ign_digits = 4;
+                                continue;
+                            }
+                            _ => {
+                                t = Some(TokenType::Invalid);
+                                break;
+                            }
+                        }
+                    }
+                    if *ign_digits > 0 {
+                        match c {
+                            b'0'...b'9' | b'A'...b'F' | b'a'...b'f' => {
+                                *ign_digits -= 1;
+                                continue;
+                            }
+                            _ => {
+                                t = Some(TokenType::Invalid);
+                                break;
+                            }
+                        }
                     }
                     match c {
                         b'"' => {
@@ -232,7 +257,7 @@ where
                     }
                 }
                 Mode::Number => match c {
-                    b'0'...b'9' | b'-' | b'.' => {
+                    b'0'...b'9' | b'-' | b'+' | b'.' | b'E' | b'e' => {
                         if let Some(ref mut v) = buf {
                             v.push(c);
                         }
@@ -287,7 +312,7 @@ where
                             break;
                         }
                         b'"' => {
-                            state = Mode::String(false);
+                            state = Mode::String(false, 0);
                             if let Some(ref mut v) = buf {
                                 v.push(c);
                             } else {

@@ -1,4 +1,9 @@
 <a name="v1.0.1"></a>
+### v1.1.0 (2019-02-08)
+
+This adds support for Number tokens with exponents and String tokens with the full range of escapes that are allowed. 
+
+<a name="v1.0.1"></a>
 ### v1.0.1 (2017-01-02)
 
 Changed the headline of the crate to be more descriptive.

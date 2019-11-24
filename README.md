@@ -30,9 +30,10 @@ Add this to your lib ...
 ```Rust
 extern crate json_tools;
 
+use json_tools::BufferType;
 use json_tools::Lexer;
 
-for token in Lexer::new(r#"{ "face": "😂" }"#.bytes()) {
+for token in Lexer::new(r#"{ "face": "😂" }"#.bytes(), BufferType::Span) {
 	println!("{:?}", token);
 }
 ```

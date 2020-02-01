@@ -28,8 +28,6 @@ json-tools = "*"
 
 Add this to your lib ...
 ```Rust
-extern crate json_tools;
-
 use json_tools::BufferType;
 use json_tools::Lexer;
 

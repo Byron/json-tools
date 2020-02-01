@@ -195,10 +195,7 @@ fn special_values_closed_and_unclosed() {
             Lexer::new(src.bytes(), BufferType::Span).skip(3).next(),
             Some(Token {
                 kind: kind.clone(),
-                buf: Buffer::Span(Span {
-                    first: first,
-                    end: end,
-                }),
+                buf: Buffer::Span(Span { first: first, end: end }),
             })
         );
     }

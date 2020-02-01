@@ -112,11 +112,11 @@ where
                                         let res = first_token(&mut self.buf, first_str_token);
                                         self.buf.push_back(colon_candidate);
                                         return res;
-                                    }// end is colon token
-                                }// end have token (colon?)
+                                    } // end is colon token
+                                } // end have token (colon?)
                                 None => return first_token(&mut self.buf, first_str_token),
-                            }// end match next token (colon?)
-                        }// end is string token,
+                            } // end match next token (colon?)
+                        } // end is string token,
                         TokenType::Comma => {
                             // NOTE: in case of malformed ,,,,, sequences, we just consider
                             // this a peek, return the previous comma, and put back this one

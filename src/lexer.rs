@@ -106,7 +106,7 @@ pub enum Buffer {
 #[derive(Debug, PartialEq, Clone)]
 pub enum BufferType {
     /// Use a `Buffer::MultiByte` were appropriate. Initialize it with the
-    /// given capcity (to obtain higher performance when pushing charcters)
+    /// given capacity (to obtain higher performance when pushing characters)
     Bytes(usize),
     Span,
 }
@@ -121,7 +121,7 @@ where
             chars: chars.into_iter(),
             next_byte: None,
             cursor: 0,
-            buffer_type: buffer_type,
+            buffer_type,
         }
     }
 
@@ -176,7 +176,7 @@ where
 {
     type Item = Token;
 
-    /// Lex the underlying bytte stream to generate tokens
+    /// Lex the underlying byte stream to generate tokens
     fn next(&mut self) -> Option<Token> {
         let mut t: Option<TokenType> = None;
 
@@ -217,7 +217,7 @@ where
                     }
                     if *ign_digits > 0 {
                         match c {
-                            b'0'...b'9' | b'A'...b'F' | b'a'...b'f' => {
+                            b'0'..=b'9' | b'A'..=b'F' | b'a'..=b'f' => {
                                 *ign_digits -= 1;
                                 continue;
                             }
@@ -257,7 +257,7 @@ where
                     }
                 }
                 Mode::Number => match c {
-                    b'0'...b'9' | b'-' | b'+' | b'.' | b'E' | b'e' => {
+                    b'0'..=b'9' | b'-' | b'+' | b'.' | b'E' | b'e' => {
                         if let Some(ref mut v) = buf {
                             v.push(c);
                         }
@@ -325,7 +325,7 @@ where
                             state = Mode::Null([c, b'x', b'x', b'x'], 1);
                             set_cursor(self.cursor);
                         }
-                        b'0'...b'9' | b'-' | b'.' => {
+                        b'0'..=b'9' | b'-' | b'.' => {
                             state = Mode::Number;
                             if let Some(ref mut v) = buf {
                                 v.push(c);
@@ -381,12 +381,9 @@ where
                 } else {
                     let buf = match (&t, buf) {
                         (&TokenType::String, Some(b)) | (&TokenType::Number, Some(b)) => Buffer::MultiByte(b),
-                        _ => Buffer::Span(Span {
-                            first: first,
-                            end: self.cursor,
-                        }),
+                        _ => Buffer::Span(Span { first, end: self.cursor }),
                     };
-                    Some(Token { kind: t, buf: buf })
+                    Some(Token { kind: t, buf })
                 }
             }
         }

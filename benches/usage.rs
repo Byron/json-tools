@@ -181,10 +181,7 @@ fn span_lexer_throughput(b: &mut test::Bencher) {
 #[bench]
 fn span_lexer_span_token_reader_throughput(b: &mut test::Bencher) {
     b.iter(|| {
-        let mut r = TokenReader::new(
-            Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span),
-            Some(NULL_RIDDEN),
-        );
+        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), Some(NULL_RIDDEN));
         io::copy(&mut r, &mut io::sink()).ok();
     });
     b.bytes = NULL_RIDDEN.len() as u64;
@@ -193,10 +190,7 @@ fn span_lexer_span_token_reader_throughput(b: &mut test::Bencher) {
 #[bench]
 fn span_lexer_bytes_token_reader_throughput(b: &mut test::Bencher) {
     b.iter(|| {
-        let mut r = TokenReader::new(
-            Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128)),
-            None,
-        );
+        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128)), None);
         io::copy(&mut r, &mut io::sink()).ok();
     });
     b.bytes = NULL_RIDDEN.len() as u64;
@@ -206,10 +200,7 @@ fn span_lexer_bytes_token_reader_throughput(b: &mut test::Bencher) {
 fn bytes_token_producer_bytes_token_reader_throughput(b: &mut test::Bencher) {
     let mut ncb = 0u64;
     b.iter(|| {
-        let mut r = TokenReader::new(
-            KeyValueProducer::new(BufferType::Bytes(0)).take(30000),
-            None,
-        );
+        let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Bytes(0)).take(30000), None);
         ncb = io::copy(&mut r, &mut io::sink()).unwrap();
     });
     b.bytes = ncb;
@@ -219,10 +210,7 @@ fn bytes_token_producer_bytes_token_reader_throughput(b: &mut test::Bencher) {
 fn span_token_producer_bytes_token_reader_throughput(b: &mut test::Bencher) {
     let mut ncb = 0u64;
     b.iter(|| {
-        let mut r = TokenReader::new(
-            KeyValueProducer::new(BufferType::Span).take(30000),
-            Some(KEY_VALUE_SRC),
-        );
+        let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Span).take(30000), Some(KEY_VALUE_SRC));
         ncb = io::copy(&mut r, &mut io::sink()).unwrap();
     });
     b.bytes = ncb;
@@ -242,10 +230,7 @@ fn bytes_lexer_throughput(b: &mut test::Bencher) {
 #[bench]
 fn span_filter_null_throughput(b: &mut test::Bencher) {
     b.iter(|| {
-        let f = FilterTypedKeyValuePairs::new(
-            Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span),
-            TokenType::Null,
-        );
+        let f = FilterTypedKeyValuePairs::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), TokenType::Null);
         for t in f {
             test::black_box(t);
         }
@@ -258,12 +243,7 @@ fn span_lexer_throughput_with_cursor(b: &mut test::Bencher) {
     use std::io::{Cursor, Read};
 
     b.iter(|| {
-        let it = Lexer::new(
-            Cursor::new(NULL_RIDDEN.as_bytes())
-                .bytes()
-                .filter_map(|r| r.ok()),
-            BufferType::Span,
-        );
+        let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes()).bytes().filter_map(|r| r.ok()), BufferType::Span);
         for t in it {
             test::black_box(t);
         }

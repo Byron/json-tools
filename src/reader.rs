@@ -1,6 +1,8 @@
-use std::io::{Read, Result, Write};
-use std::cmp;
-use std::ptr;
+use std::{
+    cmp,
+    io::{Read, Result, Write},
+    ptr,
+};
 
 use super::{Buffer, Token, TokenType};
 
@@ -89,7 +91,7 @@ impl<'a, I: IntoIterator<Item = Token>> Read for TokenReader<'a, I> {
 
                     if btc < bytes.len() {
                         debug_assert!(bl == 0);
-                        try!(self.buf.write_all(&bytes[btc..]));
+                        self.buf.write_all(&bytes[btc..])?;
                     }
 
                     if bl == 0 {

@@ -1,7 +1,7 @@
 [package]
 name = "json-tools"
 edition = "2018"
-version = "1.1.2-alpha.0"
+version = "1.1.2"
 authors = ["Sebastian Thiel <byronimo@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "A zero-copy json-lexer, filters and serializer."
@@ -9,6 +9,7 @@ repository = "https://github.com/Byron/json-tools"
 keywords = ["json", "tools", "lexer"]
 documentation = "https://docs.rs/crate/json-tools"
 include = ["src/**/*.rs", "Cargo.toml"]
+readme = "README.md"
 
 [dev-dependencies]
 criterion = "0.3"

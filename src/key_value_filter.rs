@@ -22,7 +22,7 @@ impl<I: IntoIterator<Item = Token>> FilterTypedKeyValuePairs<I> {
             src: src.into_iter(),
             buf: VecDeque::with_capacity(3),
             next_token: None,
-            value_type: value_type,
+            value_type,
         }
     }
 
@@ -46,13 +46,13 @@ where
     type Item = Token;
 
     fn next(&mut self) -> Option<Token> {
-        if self.buf.len() > 0 {
+        if !self.buf.is_empty() {
             return self.buf.pop_front();
         }
 
         fn first_token(v: &mut VecDeque<Token>, t: Token) -> Option<Token> {
             // assume it's a comma
-            if v.len() > 0 {
+            if !v.is_empty() {
                 v.push_back(t);
                 v.pop_front()
             } else {
@@ -120,7 +120,7 @@ where
                         TokenType::Comma => {
                             // NOTE: in case of malformed ,,,,, sequences, we just consider
                             // this a peek, return the previous comma, and put back this one
-                            if self.buf.len() > 0 {
+                            if !self.buf.is_empty() {
                                 debug_assert_eq!(self.buf.len(), 1);
                                 self.put_back(first_str_candidate);
                                 return self.buf.pop_front();

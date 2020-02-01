@@ -20,7 +20,7 @@ pub trait IteratorExt: Iterator<Item = Token> {
     ///              generated. This offers the best performance when
     ///              serializing tokens, as they can refer to their original
     ///              `&str` slice.
-    fn reader<'a>(self, source: Option<&'a str>) -> TokenReader<Self>
+    fn reader(self, source: Option<&str>) -> TokenReader<Self>
     where
         Self: Sized,
     {

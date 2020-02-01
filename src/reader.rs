@@ -48,13 +48,13 @@ impl<'a, I: IntoIterator<Item = Token>> TokenReader<'a, I> {
 
 impl<'a, I: IntoIterator<Item = Token>> Read for TokenReader<'a, I> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        if buf.len() == 0 {
+        if buf.is_empty() {
             return Ok(0);
         }
 
         // Bytes from Cache
         let mut bl = buf.len();
-        if self.buf.len() > 0 {
+        if !self.buf.is_empty() {
             let btc = cmp::min(self.buf.len() - self.ofs, buf.len());
             copy_memory(&self.buf[self.ofs..self.ofs + btc], buf);
             bl -= btc;
@@ -81,7 +81,7 @@ impl<'a, I: IntoIterator<Item = Token>> Read for TokenReader<'a, I> {
                                 None => panic!("Must set source if tokens don't provide byter buffers"),
                             },
                         },
-                        TokenType::Invalid => "".as_bytes(),
+                        TokenType::Invalid => b"",
                         _ => t.kind.as_ref().as_bytes(),
                     };
                     let btc = cmp::min(bytes.len(), bl);

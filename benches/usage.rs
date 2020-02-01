@@ -1,7 +1,4 @@
-#![feature(test)]
-
-extern crate json_tools;
-extern crate test;
+use criterion::*;
 
 use json_tools::{Buffer, BufferType, FilterTypedKeyValuePairs, Lexer, Span, Token, TokenReader, TokenType};
 use std::io;
@@ -167,86 +164,72 @@ impl Iterator for KeyValueProducer {
     }
 }
 
-#[bench]
-fn span_lexer_throughput(b: &mut test::Bencher) {
-    b.iter(|| {
-        let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span);
-        for t in it {
-            test::black_box(t);
-        }
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
 
-#[bench]
-fn span_lexer_span_token_reader_throughput(b: &mut test::Bencher) {
-    b.iter(|| {
-        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), Some(NULL_RIDDEN));
-        io::copy(&mut r, &mut io::sink()).ok();
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
-
-#[bench]
-fn span_lexer_bytes_token_reader_throughput(b: &mut test::Bencher) {
-    b.iter(|| {
-        let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128)), None);
-        io::copy(&mut r, &mut io::sink()).ok();
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
-
-#[bench]
-fn bytes_token_producer_bytes_token_reader_throughput(b: &mut test::Bencher) {
-    let mut ncb = 0u64;
-    b.iter(|| {
-        let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Bytes(0)).take(30000), None);
-        ncb = io::copy(&mut r, &mut io::sink()).unwrap();
-    });
-    b.bytes = ncb;
-}
-
-#[bench]
-fn span_token_producer_bytes_token_reader_throughput(b: &mut test::Bencher) {
-    let mut ncb = 0u64;
-    b.iter(|| {
-        let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Span).take(30000), Some(KEY_VALUE_SRC));
-        ncb = io::copy(&mut r, &mut io::sink()).unwrap();
-    });
-    b.bytes = ncb;
-}
-
-#[bench]
-fn bytes_lexer_throughput(b: &mut test::Bencher) {
-    b.iter(|| {
-        let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128));
-        for t in it {
-            test::black_box(t);
-        }
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
-
-#[bench]
-fn span_filter_null_throughput(b: &mut test::Bencher) {
-    b.iter(|| {
-        let f = FilterTypedKeyValuePairs::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), TokenType::Null);
-        for t in f {
-            test::black_box(t);
-        }
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
-}
-
-#[bench]
-fn span_lexer_throughput_with_cursor(b: &mut test::Bencher) {
+fn span_lexer_throughput_with_cursor(c: &mut Criterion) {
     use std::io::{Cursor, Read};
 
-    b.iter(|| {
-        let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes()).bytes().filter_map(|r| r.ok()), BufferType::Span);
-        for t in it {
-            test::black_box(t);
-        }
-    });
-    b.bytes = NULL_RIDDEN.len() as u64;
+    let num_elements = 30000usize;
+    c.benchmark_group("TokenReader")
+        .throughput(Throughput::Elements(num_elements as u64))
+        .bench_function("bytes token producer bytes token reader", |b| {
+            b.iter(|| {
+                let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Bytes(0)).take(30000), None);
+                io::copy(&mut r, &mut io::sink()).unwrap();
+            });
+        })
+        .bench_function("span token producer bytes token reader", |b| {
+            b.iter(|| {
+                let mut r = TokenReader::new(KeyValueProducer::new(BufferType::Span).take(num_elements), Some(KEY_VALUE_SRC));
+                io::copy(&mut r, &mut io::sink()).unwrap();
+            });
+        });
+    c.benchmark_group("Lexer")
+        .throughput(Throughput::Bytes(NULL_RIDDEN.len() as u64))
+        .bench_function("bytes lexer", |b| {
+            b.iter(|| {
+                let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128));
+                for t in it {
+                    black_box(t);
+                }
+            });
+        })
+        .bench_function("span filter null", |b| {
+            b.iter(|| {
+                let f = FilterTypedKeyValuePairs::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), TokenType::Null);
+                for t in f {
+                    black_box(t);
+                }
+            });
+        })
+        .bench_function("span lexer with cursor", |b| {
+            b.iter(|| {
+                let it = Lexer::new(Cursor::new(NULL_RIDDEN.as_bytes()).bytes().filter_map(|r| r.ok()), BufferType::Span);
+                for t in it {
+                    black_box(t);
+                }
+            })
+        })
+        .bench_function("span lexer bytes token reader", |b| {
+            b.iter(|| {
+                let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Bytes(128)), None);
+                io::copy(&mut r, &mut io::sink()).ok();
+            })
+        })
+        .bench_function("span lexer span token reader", |b| {
+            b.iter(|| {
+                let mut r = TokenReader::new(Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span), Some(NULL_RIDDEN));
+                io::copy(&mut r, &mut io::sink()).ok();
+            })
+        })
+        .bench_function("span lexer", |b| {
+            b.iter(|| {
+                let it = Lexer::new(NULL_RIDDEN.bytes(), BufferType::Span);
+                for t in it {
+                    black_box(t);
+                }
+            })
+        });
 }
+
+criterion_group!(benches, span_lexer_throughput_with_cursor);
+criterion_main!(benches);

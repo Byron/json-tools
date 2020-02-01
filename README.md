@@ -41,6 +41,10 @@ for token in Lexer::new(r#"{ "face": "😂" }"#.bytes(), BufferType::Span) {
 This library may possibly never grow bigger than the two features originally mentioned, as it was created
 as a workaround to missing features in [`serde`](https://github.com/serde-rs/serde).
 
+# Manual
+
+Run tests with `cargo test` and benchmarks with `cargo bench` (works on stable).
+
 ## License
 
 Licensed under either of

@@ -164,7 +164,6 @@ impl Iterator for KeyValueProducer {
     }
 }
 
-
 fn span_lexer_throughput_with_cursor(c: &mut Criterion) {
     use std::io::{Cursor, Read};
 

@@ -1,5 +1,5 @@
-[![](http://meritbadge.herokuapp.com/json-tools)](https://crates.io/crates/json-tools)
-[![Build Status](https://travis-ci.org/Byron/json-tools.svg?branch=master)](https://travis-ci.org/Byron/json-tools)
+[![Crates.io](https://img.shields.io/crates/v/json-tools.svg)](https://crates.io/crates/json-tools)
+[![Rust](https://github.com/Byron/json-tools/workflows/Rust/badge.svg)](https://github.com/Byron/json-tools/actions?query=workflow%3ARust)
 
 
 This library contains a collection of tools to help interacting with json encoded data.

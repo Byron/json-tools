@@ -170,6 +170,42 @@ fn other_backslash_escapes_in_string_value() {
 }
 
 #[test]
+fn isolated_value_pairs() {
+    for &(src, ref kind, first, end, buf) in &[
+        (r#""v":12"#, TokenType::Number, 4, 6, "12"),
+        (r#""v":-12"#, TokenType::Number, 4, 7, "-12"),
+        (r#""v":"12""#, TokenType::String, 4, 8, r#""12""#),
+        (r#""v":true"#, TokenType::BooleanTrue, 4, 8, ""),
+        (r#""v":false"#, TokenType::BooleanFalse, 4, 9, ""),
+        (r#""v":null"#, TokenType::Null, 4, 8, ""),
+    ] {
+        let mut it = Lexer::new(src.bytes(), BufferType::Bytes(0));
+
+        assert_eq!(
+            it.by_ref().skip(2).next(),
+            Some(Token {
+                kind: kind.clone(),
+                buf: match &kind {
+                    TokenType::Number => Buffer::MultiByte(buf.as_bytes().to_vec()),
+                    TokenType::String => Buffer::MultiByte(buf.as_bytes().to_vec()),
+                    _ => Buffer::Span(Span { first, end }),
+                }
+            })
+        );
+
+        let mut it = Lexer::new(src.bytes(), BufferType::Span);
+
+        assert_eq!(
+            it.by_ref().skip(2).next(),
+            Some(Token {
+                kind: kind.clone(),
+                buf: Buffer::Span(Span { first, end }),
+            })
+        );
+    }
+}
+
+#[test]
 fn special_values_closed_and_unclosed() {
     for &(src, ref kind, first, end) in &[
         (r#"{"v":null}"#, TokenType::Null, 5, 9),

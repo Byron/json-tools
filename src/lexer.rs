@@ -374,7 +374,17 @@ where
         } // end for each byte
 
         match t {
-            None => None,
+            None => match (buf, state) {
+                (Some(b), Mode::Number) => Some(Token {
+                    kind: TokenType::Number,
+                    buf: Buffer::MultiByte(b),
+                }),
+                (None, Mode::Number) => Some(Token {
+                    kind: TokenType::Number,
+                    buf: Buffer::Span(Span { first, end: self.cursor }),
+                }),
+                _ => None,
+            },
             Some(t) => {
                 if self.cursor == last_cursor {
                     None
